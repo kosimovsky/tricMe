@@ -2,7 +2,6 @@ package agent
 
 import (
 	"context"
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"io"
@@ -109,7 +108,6 @@ func (a *agent) Run() error {
 	for {
 		urls := urlGenerator(*c, metrics.memstats)
 		urls = append(urls, urlGeneratorCounter(*c, metrics.pollCount))
-		fmt.Println(urls)
 		select {
 		case <-ticker.C:
 
@@ -133,7 +131,6 @@ func (a *agent) Run() error {
 				}
 			}
 		}
-		urls = urls[:0]
 	}
 
 }
