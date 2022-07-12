@@ -67,8 +67,7 @@ func newConfig() *config {
 }
 
 func urlGenerator(conf config, m map[string]gauge) (urls []string) {
-	var server string
-	server = "http://" + conf.server + ":" + conf.port + "/update/"
+	server := "http://" + conf.server + ":" + conf.port + "/update/"
 	for key, value := range m {
 		url := ""
 		url = server + strings.Split(reflect.TypeOf(value).String(), ".")[1] + "/" + key + "/" + value.String()
@@ -78,8 +77,7 @@ func urlGenerator(conf config, m map[string]gauge) (urls []string) {
 }
 
 func urlGeneratorCounter(conf config, m map[string]counter) (url string) {
-	var server string
-	server = "http://" + conf.server + ":" + conf.port + "/update/"
+	server := "http://" + conf.server + ":" + conf.port + "/update/"
 	for key, value := range m {
 		url = server + strings.Split(reflect.TypeOf(value).String(), ".")[1] + "/" + key + "/" + value.String()
 	}
@@ -89,7 +87,7 @@ func urlGeneratorCounter(conf config, m map[string]counter) (url string) {
 func (a *agent) Run() error {
 	ctx := context.Background()
 	c := newConfig()
-	ticker := time.Tick(time.Duration(c.reportInterval) * time.Second)
+	ticker := time.NewTicker(time.Duration(c.reportInterval) * time.Second)
 	metrics := new(customMetrics)
 	cMetrics := make(map[string]gauge, 30)
 	pollCount := make(map[string]counter, 1)
@@ -113,7 +111,7 @@ func (a *agent) Run() error {
 		urls = append(urls, urlGeneratorCounter(*c, metrics.pollCount))
 		fmt.Println(urls)
 		select {
-		case <-ticker:
+		case <-ticker.C:
 
 		case <-ctx.Done():
 			return nil
