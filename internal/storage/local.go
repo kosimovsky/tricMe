@@ -80,12 +80,16 @@ func (s *LocalStorage) Store(url string) error {
 
 func (s *LocalStorage) Output() error {
 	bytesMemStats, err := json.Marshal(s.metrics)
+	if err != nil {
+		return err
+	}
 	bytesPollCounter, err := json.Marshal(s.pollCounter)
 	if err != nil {
 		return err
 	}
 
 	mergedOutput := map[string]interface{}{}
+
 	err = json.Unmarshal(bytesMemStats, &mergedOutput)
 	if err != nil {
 		return err
