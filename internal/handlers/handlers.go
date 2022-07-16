@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
@@ -28,8 +27,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		u := r.URL.RequestURI()
 
 		parts := strings.Split(u, "/")
-		fmt.Printf("%q", parts)
-		if len(parts) > 3 {
+		if len(parts) > 4 {
 			if parts[2] == "gauge" || parts[2] == "counter" {
 				if parts[1] == "update" && (parts[4] == "" || parts[4] == "none") {
 					logrus.Printf("Got metric %s without id, original url: %s", parts[2], u)
