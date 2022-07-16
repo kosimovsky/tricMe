@@ -95,6 +95,9 @@ func (s *LocalStorage) Output() error {
 		return err
 	}
 	finalOut, err := json.MarshalIndent(mergedOutput, "", " ")
+	if err != nil {
+		return err
+	}
 	println(string(finalOut))
 	return nil
 }

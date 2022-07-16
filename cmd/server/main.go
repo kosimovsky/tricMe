@@ -66,7 +66,7 @@ func main() {
 	}()
 
 	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	sig := <-quit
 	log.Printf("Recieved a signal %v. Server is shutting down...", sig)
 	if err := srv.Shutdown(context.Background()); err != nil {
