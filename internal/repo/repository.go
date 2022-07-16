@@ -7,13 +7,13 @@ type Source struct {
 }
 
 type Miner interface {
-	GetMetricsName() string
+	GenerateMetrics()
 }
 
 func NewMiner(s *Source) (Miner, error) {
 
 	if s.Resources == "memStat" {
-		return runtimemetrics.New(), nil
+		return runtimemetrics.NewCustomMetrics(), nil
 	}
 	return nil, nil
 }

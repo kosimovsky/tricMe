@@ -2,8 +2,12 @@ server:
   address: "127.0.0.1"
   port: "8080"
   logfile: "server.log"
+  loglevel: 3
+  storage: "local"
+  debug: False
 
 agent:
   logfile: "agent.log"
   pollInterval: 2
   reportInterval: 10
+  metricsType: "memStat"

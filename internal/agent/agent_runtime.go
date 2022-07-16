@@ -2,36 +2,16 @@ package agent
 
 import (
 	"context"
+	"io"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"io"
-	"math/rand"
-	"net/http"
-	"reflect"
-	"runtime"
-	"strconv"
-	"strings"
-	"time"
+
+	"github.com/kosimovsky/tricMe/internal/repo/runtimemetrics"
 )
-
-type gauge float64
-
-func (g gauge) String() string {
-	return strconv.FormatFloat(float64(g), 'f', -1, 64)
-}
-
-type counter int64
-
-func (c counter) String() string {
-	return strconv.Itoa(int(c))
-}
-
-type metricsMap map[string]gauge
-
-type customMetrics struct {
-	memstats  metricsMap
-	pollCount map[string]counter
-}
 
 type Sender interface {
 	NewRequestWithContext(ctx context.Context, method, url string, headers *http.Header, body io.Reader) (*http.Request, error)
@@ -69,7 +49,17 @@ func urlGenerator(conf config, m map[string]gauge) (urls []string) {
 	server := "http://" + conf.server + ":" + conf.port + "/update/"
 	for key, value := range m {
 		url := ""
-		url = server + strings.Split(reflect.TypeOf(value).String(), ".")[1] + "/" + key + "/" + value.String()
+		typeOfValue := func(c interface{}) string {
+			switch c.(type) {
+			case float64:
+				return "gauge"
+			case int64:
+				return "counter"
+			default:
+				return "UnknownType"
+			}
+		}(value)
+		url = server + typeOfValue + "/" + key + "/" + gaugeToString(value)
 		urls = append(urls, url)
 	}
 	return urls
@@ -78,7 +68,18 @@ func urlGenerator(conf config, m map[string]gauge) (urls []string) {
 func urlGeneratorCounter(conf config, m map[string]counter) (url string) {
 	server := "http://" + conf.server + ":" + conf.port + "/update/"
 	for key, value := range m {
-		url = server + strings.Split(reflect.TypeOf(value).String(), ".")[1] + "/" + key + "/" + value.String()
+		typeOfValue := func(c interface{}) string {
+			switch c.(type) {
+			case float64:
+				return "gauge"
+			case int64:
+				return "counter"
+			default:
+				return "UnknownType"
+			}
+		}(value)
+
+		url = server + typeOfValue + "/" + key + "/" + counterToString(value)
 	}
 	return url
 }
@@ -87,18 +88,14 @@ func (a *agent) Run() error {
 	ctx := context.Background()
 	c := newConfig()
 	ticker := time.NewTicker(time.Duration(c.reportInterval) * time.Second)
-	metrics := new(customMetrics)
-	cMetrics := make(map[string]gauge, 30)
-	pollCount := make(map[string]counter, 1)
-	metrics.memstats = cMetrics
-	metrics.pollCount = pollCount
-	metrics.newCustomMetrics()
+	metrics := runtimemetrics.NewCustomMetrics()
+	metrics.GenerateMetrics()
 	go func() {
 		for {
 			t := time.NewTicker(time.Duration(c.pollInterval) * time.Second)
 			select {
 			case <-t.C:
-				metrics.newCustomMetrics()
+				metrics.GenerateMetrics()
 			case <-ctx.Done():
 				t.Stop()
 			}
@@ -106,8 +103,8 @@ func (a *agent) Run() error {
 	}()
 
 	for {
-		urls := urlGenerator(*c, metrics.memstats)
-		urls = append(urls, urlGeneratorCounter(*c, metrics.pollCount))
+		urls := urlGenerator(*c, metrics.Memstats)
+		urls = append(urls, urlGeneratorCounter(*c, metrics.PollCount))
 		select {
 		case <-ticker.C:
 
@@ -135,36 +132,18 @@ func (a *agent) Run() error {
 
 }
 
-func (m *customMetrics) newCustomMetrics() {
-	memStats := new(runtime.MemStats)
-	runtime.ReadMemStats(memStats)
-	m.memstats["Alloc"] = gauge(memStats.Alloc)
-	m.memstats["BuckHashSys"] = gauge(memStats.BuckHashSys)
-	m.memstats["Frees"] = gauge(memStats.Frees)
-	m.memstats["GCCPUFraction"] = gauge(memStats.GCCPUFraction)
-	m.memstats["GCSys"] = gauge(memStats.GCSys)
-	m.memstats["HeapAlloc"] = gauge(memStats.HeapAlloc)
-	m.memstats["HeapIdle"] = gauge(memStats.HeapIdle)
-	m.memstats["HeapInuse"] = gauge(memStats.HeapInuse)
-	m.memstats["HeapObjects"] = gauge(memStats.HeapObjects)
-	m.memstats["HeapReleased"] = gauge(memStats.HeapReleased)
-	m.memstats["HeapSys"] = gauge(memStats.HeapSys)
-	m.memstats["LastGC"] = gauge(memStats.LastGC)
-	m.memstats["Lookups"] = gauge(memStats.Lookups)
-	m.memstats["MCacheInuse"] = gauge(memStats.MCacheInuse)
-	m.memstats["MCacheSys"] = gauge(memStats.MCacheSys)
-	m.memstats["MSpanInuse"] = gauge(memStats.MSpanInuse)
-	m.memstats["MSpanSys"] = gauge(memStats.MSpanSys)
-	m.memstats["Mallocs"] = gauge(memStats.Mallocs)
-	m.memstats["NextGC"] = gauge(memStats.NextGC)
-	m.memstats["NumForcedGC"] = gauge(memStats.NumForcedGC)
-	m.memstats["NumGC"] = gauge(memStats.NumGC)
-	m.memstats["OtherSys"] = gauge(memStats.OtherSys)
-	m.memstats["PauseTotalNs"] = gauge(memStats.PauseTotalNs)
-	m.memstats["StackInuse"] = gauge(memStats.StackInuse)
-	m.memstats["StackSys"] = gauge(memStats.StackSys)
-	m.memstats["Sys"] = gauge(memStats.Sys)
-	m.memstats["TotalAlloc"] = gauge(memStats.TotalAlloc)
-	m.pollCount["PollCount"]++
-	m.memstats["RandomValue"] = gauge(rand.Float64())
+type gauge = float64
+
+func gaugeToString(g gauge) string {
+	return strconv.FormatFloat(float64(g), 'f', -1, 64)
+}
+
+type counter = int64
+
+func counterToString(c counter) string {
+	return strconv.Itoa(int(c))
+}
+
+func (a *agent) Stop() {
+	a.client.CloseIdleConnections()
 }

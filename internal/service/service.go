@@ -7,7 +7,7 @@ import (
 )
 
 type Metrics interface {
-	GetMetricsName() string
+	GenerateMetrics()
 }
 
 type service struct {

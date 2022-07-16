@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/kosimovsky/tricMe/config"
 	"github.com/kosimovsky/tricMe/internal/agent"
 	"github.com/kosimovsky/tricMe/internal/repo"
 	"github.com/kosimovsky/tricMe/internal/service"
@@ -12,10 +13,9 @@ import (
 )
 
 func main() {
-	if err := initConfig(); err != nil {
+	if err := config.InitConfig(); err != nil {
 		_ = fmt.Errorf("error while reading config file %v", err.Error())
 	}
-
 	logfileFromConfig := viper.GetString("agent.logfile")
 	logfile, err := os.OpenFile(logfileFromConfig, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
@@ -25,24 +25,12 @@ func main() {
 	logrus.New()
 	logrus.SetOutput(logfile)
 	logrus.SetFormatter(new(logrus.JSONFormatter))
-
-	m, _ := repo.NewMiner(&repo.Source{Resources: "memStat"})
+	m, _ := repo.NewMiner(&repo.Source{Resources: viper.GetString("agent.metricsType")})
 	serv := service.New(m)
 	newAgent := agent.NewAgent(serv)
-	logrus.Fatalln(newAgent.Run())
-}
 
-// initConfig reads configuration file
-func initConfig() error {
-	viper.AddConfigPath(".")
-	viper.SetConfigType("yaml")
-	viper.SetConfigName(".config")
-
-	if err := viper.ReadInConfig(); err != nil {
-		_, err = fmt.Fprintln(os.Stderr, "Use config file:", viper.ConfigFileUsed())
-		if err != nil {
-			return err
-		}
+	defer newAgent.Stop()
+	if err := newAgent.Run(); err != nil {
+		logrus.Fatalf("error while running agent: %s", err.Error())
 	}
-	return nil
 }
