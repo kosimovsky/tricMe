@@ -43,7 +43,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			fields: fields{
 				repos: storage.NewLocalStorage(),
 			},
-			request: "http://127.0.0.1:8080/update/gauge/MAlloc/2156",
+			request: "http://127.0.0.1:8080/update/gauger/MAlloc/2156",
 			want: want{
 				contentType: "text/plain; charset=utf-8",
 				statusCode:  200,
