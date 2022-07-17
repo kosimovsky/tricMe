@@ -71,6 +71,17 @@ func TestHandler_ServeHTTP(t *testing.T) {
 				statusCode:  400,
 			},
 		},
+		{
+			name: "Test Status Code: not update in url",
+			fields: handler{
+				repos: storage.NewLocalStorage(),
+			},
+			request: "http://127.0.0.1:8080/updater/gauge/AnyGouge/4040",
+			want: want{
+				contentType: "text/plain",
+				statusCode:  404,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

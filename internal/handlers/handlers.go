@@ -17,29 +17,33 @@ func NewHandler(repos storage.Repositories) *Handler {
 }
 
 func (h Handler) MetricsHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodPost {
+	u := r.URL.RequestURI()
+	parts := strings.Split(u, "/")
 
-		//cType := r.Header.Get("Content-Type")
-		//if !compareStr(cType, "text/plain") {
-		//	w.WriteHeader(http.StatusUnsupportedMediaType)
-		//	_, err := w.Write([]byte("Sorry! Content-Type you sent not accepted"))
-		//	if err != nil {
-		//		logrus.Printf("wrong Content-Type, couldn't write to response")
-		//	}
-		//}
-		u := r.URL.RequestURI()
-		parts := strings.Split(u, "/")
+	if r.Method == http.MethodPost {
+		/*cType := r.Header.Get("Content-Type")
+		if !compareStr(cType, "text/plain") {
+			w.WriteHeader(http.StatusUnsupportedMediaType)
+			_, err := w.Write([]byte("Sorry! Content-Type you sent not accepted"))
+			if err != nil {
+				logrus.Printf("wrong Content-Type, couldn't write to response")
+			}
+		}*/
 		if len(parts) > 4 {
 			if compareStr(parts[2], "gauge") || compareStr(parts[2], "counter") {
 				if parts[1] == "update" && (parts[4] == "" || parts[4] == "none") {
 					w.WriteHeader(http.StatusBadRequest)
 					logrus.Printf("Got metric %s without id, original url: %s", parts[2], u)
+				} else if !compareStr(parts[1], "update") {
+					w.WriteHeader(http.StatusNotFound)
+					logrus.Printf("original url: %v", u)
 				} else {
 					err := h.repos.Store(u)
 					if err != nil {
 						logrus.Printf("error while storing metric from url: %v", u)
 					}
 					w.WriteHeader(http.StatusOK)
+					logrus.Printf("original url: %v", u)
 				}
 			} else {
 				w.WriteHeader(http.StatusNotImplemented)
@@ -47,9 +51,11 @@ func (h Handler) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			w.WriteHeader(http.StatusNotFound)
+			logrus.Printf("original url: %v", u)
 		}
 	} else {
 		w.WriteHeader(http.StatusNotImplemented)
+		logrus.Printf("original url: %v", u)
 	}
 }
 
