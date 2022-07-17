@@ -54,8 +54,5 @@ func (h Handler) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func compareStr(str1, str2 string) bool {
-	if strings.Compare(str1, str2) == 0 {
-		return true
-	}
-	return false
+	return strings.Compare(str1, str2) == 0
 }
