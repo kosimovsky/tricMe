@@ -11,7 +11,7 @@ import (
 )
 
 func TestHandler_ServeHTTP(t *testing.T) {
-	type fields struct {
+	type handler struct {
 		repos storage.Repositories
 	}
 
@@ -22,14 +22,14 @@ func TestHandler_ServeHTTP(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		fields  fields
+		fields  handler
 		request string
 		want    want
 	}{
 		// TODO: Add test cases.
 		{
-			name: "Test Content-type and Status Code",
-			fields: fields{
+			name: "Test good Status Code",
+			fields: handler{
 				repos: storage.NewLocalStorage(),
 			},
 			request: "http://127.0.0.1:8080/update/gauge/Alloc/2156",
@@ -39,14 +39,36 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			},
 		},
 		{
-			name: "Test Status Code wrong url",
-			fields: fields{
+			name: "Test Status Code wrong type of metrics",
+			fields: handler{
 				repos: storage.NewLocalStorage(),
 			},
-			request: "http://127.0.0.1:8080/update/gauger/MAlloc/2156",
+			request: "http://127.0.0.1:8080/update/gauger/Alloc/2156",
 			want: want{
-				contentType: "text/plain; charset=utf-8",
-				statusCode:  200,
+				contentType: "text/plain",
+				statusCode:  501,
+			},
+		},
+		{
+			name: "Test Status Code: without metric",
+			fields: handler{
+				repos: storage.NewLocalStorage(),
+			},
+			request: "http://127.0.0.1:8080/update/counter/",
+			want: want{
+				contentType: "text/plain",
+				statusCode:  404,
+			},
+		},
+		{
+			name: "Test Status Code: any metric with none",
+			fields: handler{
+				repos: storage.NewLocalStorage(),
+			},
+			request: "http://127.0.0.1:8080/update/gauge/AnyCounter/none",
+			want: want{
+				contentType: "text/plain",
+				statusCode:  400,
 			},
 		},
 	}
@@ -54,18 +76,18 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 
 			request := httptest.NewRequest(http.MethodPost, tt.request, nil)
-
 			w := httptest.NewRecorder()
 
 			h := Handler{
 				repos: tt.fields.repos,
 			}
-			handler := http.HandlerFunc(h.ServeHTTP)
 
-			handler.ServeHTTP(w, request)
+			hdlr := http.HandlerFunc(h.MetricsHandler)
+
+			hdlr.ServeHTTP(w, request)
+
 			result := w.Result()
 			assert.Equal(t, result.StatusCode, tt.want.statusCode)
-			assert.Equal(t, result.Header.Get("Content-Type"), tt.want.contentType)
 
 			_, err := ioutil.ReadAll(result.Body)
 			require.NoError(t, err)
