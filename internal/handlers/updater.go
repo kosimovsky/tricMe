@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"net/http"
+	"regexp"
 )
 
 func (h *Handler) updateGauge(c *gin.Context) {
@@ -11,10 +12,15 @@ func (h *Handler) updateGauge(c *gin.Context) {
 	metricName := c.Param("metric")
 	metricValue := c.Param("value")
 
-	err := h.repos.Store(metricName, metricValue, false)
-	c.Status(http.StatusOK)
+	reg, err := regexp.Compile(`[.\d]`)
 	if err != nil {
-		logrus.Printf("error while storing metric %s with value %s", metricName, metricValue)
+		logrus.Errorf("error while regex compiling: %s", err.Error())
+	}
+	if !reg.MatchString(metricValue) {
+		h.statusBadRequest(c)
+	} else {
+		h.repos.Store(metricName, metricValue, false)
+		c.Status(http.StatusOK)
 	}
 }
 
@@ -23,10 +29,15 @@ func (h *Handler) updateCounter(c *gin.Context) {
 	metricName := c.Param("metric")
 	metricValue := c.Param("value")
 
-	err := h.repos.Store(metricName, metricValue, true)
-	c.Status(http.StatusOK)
+	reg, err := regexp.Compile(`[.\d]`)
 	if err != nil {
-		logrus.Printf("error while storing metric %s with value %s", metricName, metricValue)
+		logrus.Errorf("error while regex compiling: %s", err.Error())
+	}
+	if !reg.MatchString(metricValue) {
+		h.statusBadRequest(c)
+	} else {
+		h.repos.Store(metricName, metricValue, true)
+		c.Status(http.StatusOK)
 	}
 }
 
@@ -35,7 +46,8 @@ func (h *Handler) singleGauge(c *gin.Context) {
 
 	metricValue, err := h.repos.SingleMetric(metricName, false)
 	if err != nil {
-		errorResponse(c, http.StatusNotFound, "not found")
+		h.statusNotFound(c)
+		//errorResponse(c, http.StatusNotFound, "not found")
 		return
 	}
 	_, err = c.Writer.WriteString(metricValue)
@@ -50,7 +62,8 @@ func (h *Handler) singleCounter(c *gin.Context) {
 
 	metricValue, err := h.repos.SingleMetric(metricName, true)
 	if err != nil {
-		errorResponse(c, http.StatusNotFound, "not found")
+		h.statusNotFound(c)
+		//errorResponse(c, http.StatusNotFound, "not found")
 		return
 	}
 	_, err = c.Writer.WriteString(metricValue)
@@ -61,10 +74,10 @@ func (h *Handler) singleCounter(c *gin.Context) {
 }
 
 func (h *Handler) startPage(c *gin.Context) {
+	currentMetrics := h.repos.Current()
 	c.HTML(http.StatusOK, "start_page.html", gin.H{
-		"content": "this is the start page",
+		"content": `"Welcome!"
+There are some metrics for you.`,
+		"Metrics": currentMetrics,
 	})
-
-	//m, _ := h.repos.Marshal()
-
 }

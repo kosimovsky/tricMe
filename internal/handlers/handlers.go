@@ -24,19 +24,19 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 
 	update := router.Group("/update")
 	{
-		update.POST("/", h.statusNotImplemented)
+		update.POST("", h.statusNotImplemented)
 		r := update.Group("/:regex", h.statusNotImplementedRegex)
 		{
-			r.POST("/", h.statusNotImplementedRegex)
+			r.POST("", h.statusNotImplementedRegex)
 			mType := r.Group("/:metric", h.statusNotImplemented)
 			{
-				mType.POST("/", h.statusNotImplemented)
+				mType.POST("", h.statusNotImplemented)
 				mType.POST("/:value", h.statusNotImplemented)
 			}
 		}
 		gauge := update.Group("/gauge")
 		{
-			gauge.POST("/", h.statusNotFound)
+			gauge.POST("", h.statusNotFound)
 			metric := gauge.Group("/:metric", h.statusNotFound)
 			{
 				metric.POST("/:value", h.updateGauge)
@@ -44,7 +44,7 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 		}
 		counter := update.Group("/counter")
 		{
-			counter.POST("/", h.statusNotFound)
+			counter.POST("", h.statusNotFound)
 			metric := counter.Group("/:metric", h.statusNotFound)
 			{
 				metric.POST("/:value", h.updateCounter)
@@ -54,23 +54,23 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 
 	value := router.Group("/value")
 	{
-		value.GET("/", h.statusNotImplemented)
+		value.GET("", h.statusNotImplemented)
 		r := value.Group("/:regex", h.statusNotImplementedRegex)
 		{
-			r.GET("/", h.statusNotImplementedRegex)
+			r.GET("", h.statusNotImplementedRegex)
 			mType := r.Group("/:metric", h.statusNotImplemented)
 			{
-				mType.GET("/", h.statusNotImplemented)
+				mType.GET("", h.statusNotImplemented)
 			}
 		}
 		gauge := value.Group("/gauge")
 		{
-			gauge.GET("/", h.statusNotFound)
+			gauge.GET("", h.statusNotFound)
 			gauge.GET("/:metric", h.singleGauge)
 		}
 		counter := value.Group("/counter")
 		{
-			counter.GET("/", h.statusNotFound)
+			counter.GET("", h.statusNotFound)
 			counter.GET("/:metric", h.singleCounter)
 		}
 	}

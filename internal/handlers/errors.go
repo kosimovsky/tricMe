@@ -11,31 +11,35 @@ type errors struct {
 	Message string `json:"message"`
 }
 
-func errorsResponseWithStatusCode(ctx *gin.Context, statusCode int, message string) {
+func errorsResponseWithStatusCode(c *gin.Context, statusCode int, message string) {
 	logrus.Error(message)
-	ctx.AbortWithStatusJSON(statusCode, errors{Message: message})
+	c.AbortWithStatusJSON(statusCode, errors{Message: message})
 }
 
-func errorResponse(ctx *gin.Context, statusCode int, message string) {
+func errorResponse(c *gin.Context, statusCode int, message string) {
 	logrus.Error(message)
-	ctx.Status(statusCode)
+	c.Status(statusCode)
 }
 
-func (h *Handler) statusNotImplemented(ctx *gin.Context) {
-	errorResponse(ctx, http.StatusNotImplemented, "Not implemented")
+func (h *Handler) statusNotImplemented(c *gin.Context) {
+	errorResponse(c, http.StatusNotImplemented, "Not implemented")
 }
 
-func (h *Handler) statusNotImplementedRegex(ctx *gin.Context) {
+func (h *Handler) statusNotImplementedRegex(c *gin.Context) {
 	reg, err := regexp.Compile(`(gauge\b|counter\b)`)
 	if err != nil {
 		logrus.Errorf("error while regex compiling: %s", err.Error())
 	}
-	metricType := ctx.Param("regex")
+	metricType := c.Param("regex")
 	if !reg.MatchString(metricType) {
-		h.statusNotImplemented(ctx)
+		h.statusNotImplemented(c)
 	}
 }
 
-func (h *Handler) statusNotFound(ctx *gin.Context) {
-	errorResponse(ctx, http.StatusNotFound, "Not found")
+func (h *Handler) statusNotFound(c *gin.Context) {
+	errorResponse(c, http.StatusNotFound, "Not found")
+}
+
+func (h *Handler) statusBadRequest(c *gin.Context) {
+	errorResponse(c, http.StatusBadRequest, "Bad request")
 }

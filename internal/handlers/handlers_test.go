@@ -30,7 +30,7 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 		{
 			name: "Test good Status Code",
 			fields: handler{
-				repos: storage.NewLocalStorage(),
+				repos: storage.NewLocalStorage().DefaultStorage(),
 			},
 			statusCode: http.StatusOK,
 			path:       "/update/gauge/Alloc/98479",
@@ -39,7 +39,7 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 		{
 			name: "Test without value",
 			fields: handler{
-				repos: storage.NewLocalStorage(),
+				repos: storage.NewLocalStorage().DefaultStorage(),
 			},
 			statusCode: http.StatusNotFound,
 			path:       "/update/gauge/Alloc",
@@ -48,16 +48,24 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 		{
 			name: "get gauge value",
 			fields: handler{
-				repos: storage.NewLocalStorage(),
+				repos: storage.NewLocalStorage().DefaultStorage(),
 			},
-			statusCode: http.StatusNotFound,
+			statusCode: http.StatusOK,
 			path:       "/value/gauge/Alloc",
+			method:     "GET",
+		},
+		{
+			name: "get start page",
+			fields: handler{
+				repos: storage.NewLocalStorage().DefaultStorage(),
+			},
+			statusCode: http.StatusOK,
+			path:       "/",
 			method:     "GET",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			h := Handler{
 				repos: tt.fields.repos,
 			}

@@ -5,17 +5,18 @@ type Storage struct {
 }
 
 type Repositories interface {
-	Store(metricName, metricValue string, isCounter bool) error
+	Store(metricName, metricValue string, isCounter bool)
 	Output() error
 	Marshal() ([]byte, error)
 	SingleMetric(metricName string, isCounter bool) (string, error)
+	Current() map[string]interface{}
 }
 
 func NewStorage(s *Storage) (Repositories, error) {
 	switch s.StorageType {
 	case "local":
-		return NewLocalStorage().defaultStorage(), nil
+		return NewLocalStorage().DefaultStorage(), nil
 	default:
-		return NewLocalStorage().defaultStorage(), nil
+		return NewLocalStorage().DefaultStorage(), nil
 	}
 }
