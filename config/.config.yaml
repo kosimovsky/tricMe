@@ -4,6 +4,7 @@ server:
   logfile: "server.log"
   loglevel: 3
   storage: "local"
+  ginMode: "release"
   debug: False
 
 agent:

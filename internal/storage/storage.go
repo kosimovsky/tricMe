@@ -5,8 +5,10 @@ type Storage struct {
 }
 
 type Repositories interface {
-	Store(string) error
+	Store(metricName, metricValue string, isCounter bool) error
 	Output() error
+	Marshal() ([]byte, error)
+	SingleMetric(metricName string, isCounter bool) (string, error)
 }
 
 func NewStorage(s *Storage) (Repositories, error) {

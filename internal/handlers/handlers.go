@@ -1,10 +1,7 @@
 package handlers
 
 import (
-	"github.com/sirupsen/logrus"
-	"net/http"
-	"strings"
-
+	"github.com/gin-gonic/gin"
 	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
@@ -16,49 +13,66 @@ func NewHandler(repos storage.Repositories) *Handler {
 	return &Handler{repos: repos}
 }
 
-func (h Handler) MetricsHandler(w http.ResponseWriter, r *http.Request) {
-	u := r.URL.RequestURI()
-	parts := strings.Split(u, "/")
+func (h *Handler) MetricsRouter() *gin.Engine {
+	router := gin.New()
 
-	if r.Method == http.MethodPost {
-		/*cType := r.Header.Get("Content-Type")
-		if !compareStr(cType, "text/plain") {
-			w.WriteHeader(http.StatusUnsupportedMediaType)
-			_, err := w.Write([]byte("Sorry! Content-Type you sent not accepted"))
-			if err != nil {
-				logrus.Printf("wrong Content-Type, couldn't write to response")
-			}
-		}*/
-		if len(parts) > 4 {
-			if compareStr(parts[2], "gauge") || compareStr(parts[2], "counter") {
-				if parts[1] == "update" && (parts[4] == "" || parts[4] == "none") {
-					w.WriteHeader(http.StatusBadRequest)
-					logrus.Printf("Got metric %s without id, original url: %s", parts[2], u)
-				} else if !compareStr(parts[1], "update") {
-					w.WriteHeader(http.StatusNotFound)
-					logrus.Printf("original url: %v", u)
-				} else {
-					err := h.repos.Store(u)
-					if err != nil {
-						logrus.Printf("error while storing metric from url: %v", u)
-					}
-					w.WriteHeader(http.StatusOK)
-					logrus.Printf("original url: %v", u)
-				}
-			} else {
-				w.WriteHeader(http.StatusNotImplemented)
-				logrus.Printf("Uknown type of metrics %s", parts[2])
-			}
-		} else {
-			w.WriteHeader(http.StatusNotFound)
-			logrus.Printf("original url: %v", u)
-		}
-	} else {
-		w.WriteHeader(http.StatusNotImplemented)
-		logrus.Printf("original url: %v", u)
+	htmlStart := router.Group("/")
+	{
+		router.LoadHTMLGlob("templates/*.html")
+		htmlStart.GET("/", h.startPage)
 	}
-}
 
-func compareStr(str1, str2 string) bool {
-	return strings.Compare(str1, str2) == 0
+	update := router.Group("/update")
+	{
+		update.POST("/", h.statusNotImplemented)
+		r := update.Group("/:regex", h.statusNotImplementedRegex)
+		{
+			r.POST("/", h.statusNotImplementedRegex)
+			mType := r.Group("/:metric", h.statusNotImplemented)
+			{
+				mType.POST("/", h.statusNotImplemented)
+				mType.POST("/:value", h.statusNotImplemented)
+			}
+		}
+		gauge := update.Group("/gauge")
+		{
+			gauge.POST("/", h.statusNotFound)
+			metric := gauge.Group("/:metric", h.statusNotFound)
+			{
+				metric.POST("/:value", h.updateGauge)
+			}
+		}
+		counter := update.Group("/counter")
+		{
+			counter.POST("/", h.statusNotFound)
+			metric := counter.Group("/:metric", h.statusNotFound)
+			{
+				metric.POST("/:value", h.updateCounter)
+			}
+		}
+	}
+
+	value := router.Group("/value")
+	{
+		value.GET("/", h.statusNotImplemented)
+		r := value.Group("/:regex", h.statusNotImplementedRegex)
+		{
+			r.GET("/", h.statusNotImplementedRegex)
+			mType := r.Group("/:metric", h.statusNotImplemented)
+			{
+				mType.GET("/", h.statusNotImplemented)
+			}
+		}
+		gauge := value.Group("/gauge")
+		{
+			gauge.GET("/", h.statusNotFound)
+			gauge.GET("/:metric", h.singleGauge)
+		}
+		counter := value.Group("/counter")
+		{
+			counter.GET("/", h.statusNotFound)
+			counter.GET("/:metric", h.singleCounter)
+		}
+	}
+	return router
 }

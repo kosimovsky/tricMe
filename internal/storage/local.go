@@ -1,10 +1,13 @@
 package storage
 
 import (
+	"bytes"
+	"encoding/gob"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"strconv"
-	"strings"
 )
 
 type gauge = float64
@@ -55,20 +58,18 @@ func (s *LocalStorage) defaultStorage() *LocalStorage {
 	return st
 }
 
-func (s *LocalStorage) Store(url string) error {
-	if url != "" {
-		parts := strings.Split(url, "/")
-		if parts[3] == "PollCount" {
-			v, _ := strconv.Atoi(parts[4])
-			if s.pollCounter["PollCounter"] > 0 {
-				s.pollCounter["PollCounter"] += counter(v)
-			} else {
-				s.pollCounter["PollCounter"] = counter(v)
-			}
+func (s *LocalStorage) Store(metricName, metricValue string, isCounter bool) error {
+	if isCounter {
+		v, _ := strconv.Atoi(metricValue)
+		if s.pollCounter["PollCounter"] > 0 {
+			s.pollCounter["PollCounter"] += counter(v)
+		} else {
+			s.pollCounter["PollCounter"] = counter(v)
 		}
+	} else {
 		for key, value := range s.metrics {
-			if parts[3] == key {
-				v, _ := strconv.ParseFloat(parts[4], 64)
+			if metricName == key {
+				v, _ := strconv.ParseFloat(metricValue, 64)
 				s.metrics[key] = v
 			} else {
 				logrus.Debugf("value of key: %s not updated, value = %v", key, value)
@@ -104,4 +105,28 @@ func (s *LocalStorage) Output() error {
 	}
 	println(string(finalOut))
 	return nil
+}
+
+func (s *LocalStorage) SingleMetric(metricName string, isCounter bool) (string, error) {
+	if isCounter {
+		return strconv.FormatInt(s.pollCounter["PollCounter"], 10), nil
+	} else {
+		for key, value := range s.metrics {
+			if metricName == key {
+				return strconv.FormatFloat(value, 'f', -1, 64), nil
+			}
+		}
+	}
+	return "None", errors.New(fmt.Sprintf("there is no such metric %s", metricName))
+}
+
+func (s *LocalStorage) Marshal() ([]byte, error) {
+	var buff bytes.Buffer
+	enc := gob.NewEncoder(&buff)
+	err := enc.Encode(s.metrics)
+	_ = enc.Encode(s.pollCounter)
+	if err != nil {
+		return nil, err
+	}
+	return buff.Bytes(), nil
 }

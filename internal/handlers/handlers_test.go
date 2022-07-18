@@ -1,30 +1,30 @@
 package handlers
 
 import (
-	"github.com/kosimovsky/tricMe/internal/storage"
-	"github.com/magiconair/properties/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
-func TestHandler_ServeHTTP(t *testing.T) {
+func TestHandler_MetricsRouterRouter(t *testing.T) {
 	type handler struct {
 		repos storage.Repositories
 	}
-
-	type want struct {
-		contentType string
-		statusCode  int
-	}
+	gin.SetMode(gin.TestMode)
 
 	tests := []struct {
-		name    string
-		fields  handler
-		request string
-		want    want
+		name       string
+		fields     handler
+		path       string
+		method     string
+		statusCode int
 	}{
 		// TODO: Add test cases.
 		{
@@ -32,78 +32,56 @@ func TestHandler_ServeHTTP(t *testing.T) {
 			fields: handler{
 				repos: storage.NewLocalStorage(),
 			},
-			request: "http://127.0.0.1:8080/update/gauge/Alloc/2156",
-			want: want{
-				contentType: "text/plain; charset=utf-8",
-				statusCode:  200,
-			},
+			statusCode: http.StatusOK,
+			path:       "/update/gauge/Alloc/98479",
+			method:     "POST",
 		},
 		{
-			name: "Test Status Code wrong type of metrics",
+			name: "Test without value",
 			fields: handler{
 				repos: storage.NewLocalStorage(),
 			},
-			request: "http://127.0.0.1:8080/update/gauger/Alloc/2156",
-			want: want{
-				contentType: "text/plain",
-				statusCode:  501,
-			},
+			statusCode: http.StatusNotFound,
+			path:       "/update/gauge/Alloc",
+			method:     "POST",
 		},
 		{
-			name: "Test Status Code: without metric",
+			name: "get gauge value",
 			fields: handler{
 				repos: storage.NewLocalStorage(),
 			},
-			request: "http://127.0.0.1:8080/update/counter/",
-			want: want{
-				contentType: "text/plain",
-				statusCode:  404,
-			},
-		},
-		{
-			name: "Test Status Code: any metric with none",
-			fields: handler{
-				repos: storage.NewLocalStorage(),
-			},
-			request: "http://127.0.0.1:8080/update/gauge/AnyCounter/none",
-			want: want{
-				contentType: "text/plain",
-				statusCode:  400,
-			},
-		},
-		{
-			name: "Test Status Code: not update in url",
-			fields: handler{
-				repos: storage.NewLocalStorage(),
-			},
-			request: "http://127.0.0.1:8080/updater/gauge/AnyGouge/4040",
-			want: want{
-				contentType: "text/plain",
-				statusCode:  404,
-			},
+			statusCode: http.StatusNotFound,
+			path:       "/value/gauge/Alloc",
+			method:     "GET",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 
-			request := httptest.NewRequest(http.MethodPost, tt.request, nil)
-			w := httptest.NewRecorder()
-
 			h := Handler{
 				repos: tt.fields.repos,
 			}
 
-			hdlr := http.HandlerFunc(h.MetricsHandler)
+			ts := httptest.NewServer(h.MetricsRouter())
+			defer ts.Close()
 
-			hdlr.ServeHTTP(w, request)
-
-			result := w.Result()
-			assert.Equal(t, result.StatusCode, tt.want.statusCode)
-
-			_, err := ioutil.ReadAll(result.Body)
-			require.NoError(t, err)
-			err = result.Body.Close()
-			require.NoError(t, err)
+			resp, _ := testRequest(t, ts, tt.method, tt.path)
+			assert.Equal(t, resp.StatusCode, tt.statusCode)
 		})
 	}
+}
+
+func testRequest(t *testing.T, ts *httptest.Server, method, path string) (*http.Response, string) {
+	req, err := http.NewRequest(method, ts.URL+path, nil)
+	require.NoError(t, err)
+
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	defer resp.Body.Close()
+
+	return resp, string(respBody)
 }

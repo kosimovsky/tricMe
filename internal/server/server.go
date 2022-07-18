@@ -14,10 +14,10 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-func (s *Server) Run(port string, handler func(w http.ResponseWriter, response *http.Request)) error {
+func (s *Server) Run(port string, handler http.Handler) error {
 	s.httpServer = &http.Server{
 		Addr:           ":" + port,
-		Handler:        http.HandlerFunc(handler),
+		Handler:        handler,
 		MaxHeaderBytes: 1 << 20,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
