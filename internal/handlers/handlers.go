@@ -37,6 +37,7 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 		gauge := update.Group("/gauge")
 		{
 			gauge.POST("", h.statusNotFound)
+			gauge.POST("/", h.statusNotFound)
 			metric := gauge.Group("/:metric", h.statusNotFound)
 			{
 				metric.POST("/:value", h.updateGauge)
@@ -45,6 +46,7 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 		counter := update.Group("/counter")
 		{
 			counter.POST("", h.statusNotFound)
+			counter.POST("/", h.statusNotFound)
 			metric := counter.Group("/:metric", h.statusNotFound)
 			{
 				metric.POST("/:value", h.updateCounter)
