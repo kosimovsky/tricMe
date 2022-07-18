@@ -77,7 +77,7 @@ func (s *LocalStorage) Store(metricName, metricValue string, isCounter bool) {
 		}
 	} else {
 		v, _ := strconv.ParseFloat(metricValue, 64)
-		for key, _ := range s.gaugeMetrics {
+		for key := range s.gaugeMetrics {
 			if metricName == key {
 				found = true
 				s.gaugeMetrics[key] = v
