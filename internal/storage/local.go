@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/sirupsen/logrus"
 	"strconv"
@@ -117,7 +116,7 @@ func (s *LocalStorage) SingleMetric(metricName string, isCounter bool) (string, 
 			}
 		}
 	}
-	return "None", errors.New(fmt.Sprintf("there is no such metric %s", metricName))
+	return "None", fmt.Errorf("there is no such metric %s", metricName)
 }
 
 func (s *LocalStorage) Marshal() ([]byte, error) {

@@ -67,6 +67,7 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 
 			resp, _ := testRequest(t, ts, tt.method, tt.path)
 			assert.Equal(t, resp.StatusCode, tt.statusCode)
+			resp.Body.Close()
 		})
 	}
 }
