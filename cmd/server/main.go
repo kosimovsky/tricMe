@@ -60,7 +60,7 @@ func main() {
 	}
 
 	go func() {
-		if err := srv.Run(viper.GetString("server.port"), handler.MetricsHandler); err != nil {
+		if err := srv.Run(viper.GetString("server.port"), handler.MetricsRouter()); err != nil {
 			log.Fatalf("error occured while running server: %s", err.Error())
 		}
 	}()

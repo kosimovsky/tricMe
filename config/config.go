@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
 
@@ -19,5 +20,21 @@ func InitConfig() error {
 			return err
 		}
 	}
+
+	setGinMode(viper.GetString("server.ginMode"))
 	return nil
+}
+
+// setGinMode sets mode for Gin Framework (default: debug)
+func setGinMode(mode string) {
+	switch mode {
+	case "release":
+		gin.SetMode(gin.ReleaseMode)
+	case "debug":
+		gin.SetMode(gin.DebugMode)
+	case "test":
+		gin.SetMode(gin.TestMode)
+	default:
+		gin.SetMode(gin.DebugMode)
+	}
 }
