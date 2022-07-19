@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="UTF-8">
+    <title>TricMe</title>
+</head>
+<body>
+<style>
+    h1 {text-align: center;}
+    h1 {font-family: "Fira Code Medium",cursive}
+    h1 {color: cornflowerblue}
+    div1 {font-family: "Fira Code Medium",system-ui}
+    div1 {font-size: larger}
+    div2 {height: 50px;
+        line-height: 30px;
+        width: 200px;
+        text-align: right;
+        font-size: large;
+        color: firebrick;
+    }
+</style>
+<h1>{{ .content }}</h1>
+{{ range $key, $value := .Metrics }}
+  <div1>{{ $key }}</div1>  <div2> {{ $value }} </div2> <br>
+{{ end }}
+</body>
+</html>

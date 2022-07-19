@@ -4,25 +4,63 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+
+	"github.com/kosimovsky/tricMe/config"
+	"github.com/kosimovsky/tricMe/internal/handlers"
+	"github.com/kosimovsky/tricMe/internal/server"
+	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
-const serverPort = 8080
-
 func main() {
+	if err := config.InitConfig(); err != nil {
+		_ = fmt.Errorf("error while reading config file %v", err.Error())
+	}
+	logfileFromConfig := viper.GetString("server.logfile")
+	logfile, err := os.OpenFile(logfileFromConfig, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		log.Printf("error occured opening file : %v, %s", err, logfileFromConfig)
+	}
+	defer logfile.Close()
+	logrus.New()
+	logrus.SetOutput(logfile)
+	logrus.SetFormatter(new(logrus.JSONFormatter))
 
-	srv := new(Server)
+	store, _ := storage.NewStorage(&storage.Storage{StorageType: viper.GetString("server.storage")})
+	handler := handlers.NewHandler(store)
+
+	srv := server.NewServer()
+
+	if viper.GetBool("server.debug") {
+		logrus.SetLevel(logrus.WarnLevel)
+		logrus.Printf("Server started in debug mode with loglevel: %v", logrus.GetLevel().String())
+		ctx := context.Background()
+		go func() {
+			ticker := time.NewTicker(5 * time.Second)
+			for {
+				select {
+				case <-ticker.C:
+					err := store.Output()
+					if err != nil {
+						logrus.Printf("error output: %s", err.Error())
+					}
+				case <-ctx.Done():
+					ticker.Stop()
+				}
+			}
+		}()
+	} else {
+		logrus.Printf("Server started in silent mode with loglevel: %v", logrus.GetLevel().String())
+	}
 
 	go func() {
-		mux := http.DefaultServeMux
-		mux.HandleFunc("/update/", func(w http.ResponseWriter, r *http.Request) {
-			fmt.Printf("server: %s /\n", r.Method)
-		})
-		if err := srv.Run("8080", mux); err != nil {
+		if err := srv.Run(viper.GetString("server.port"), handler.MetricsRouter()); err != nil {
 			log.Fatalf("error occured while running server: %s", err.Error())
 		}
 	}()
@@ -34,23 +72,4 @@ func main() {
 	if err := srv.Shutdown(context.Background()); err != nil {
 		log.Fatalf("error occured while server shutting down : %s", err.Error())
 	}
-}
-
-type Server struct {
-	httpServer *http.Server
-}
-
-func (s *Server) Run(port string, handler http.Handler) error {
-	s.httpServer = &http.Server{
-		Addr:           ":" + port,
-		Handler:        handler,
-		MaxHeaderBytes: 1 << 20,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-	}
-	return s.httpServer.ListenAndServe()
-}
-
-func (s *Server) Shutdown(ctx context.Context) error {
-	return s.httpServer.Shutdown(ctx)
 }
