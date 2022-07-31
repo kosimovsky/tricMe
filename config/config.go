@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// InitConfig reads configuration file
+// InitConfig reads configuration file and ENV
 func InitConfig() error {
 	viper.AddConfigPath("config")
 	viper.SetConfigType("yaml")
@@ -19,6 +19,19 @@ func InitConfig() error {
 		if err != nil {
 			return err
 		}
+	}
+
+	err := viper.BindEnv("server.address", "ADDRESS")
+	if err != nil {
+		return err
+	}
+	err = viper.BindEnv("agent.pollInterval", "POLL_INTERVAL")
+	if err != nil {
+		return err
+	}
+	err = viper.BindEnv("agent.reportInterval", "REPORT_INTERVAL")
+	if err != nil {
+		return err
 	}
 
 	setGinMode(viper.GetString("server.ginMode"))

@@ -40,21 +40,19 @@ func NewAgent(serv Sender) *agent {
 }
 
 type config struct {
-	server         string
-	port           string
+	address        string
 	pollInterval   int
 	reportInterval int
 }
 
 func newConfig() *config {
-	return &config{server: viper.GetString("server.address"),
-		port:           viper.GetString("server.port"),
+	return &config{address: viper.GetString("server.address"),
 		pollInterval:   viper.GetInt("agent.pollInterval"),
 		reportInterval: viper.GetInt("agent.reportInterval")}
 }
 
 func urlGenerator(conf config, m map[string]gauge) (urls []string) {
-	server := "http://" + conf.server + ":" + conf.port + "/update/"
+	server := "http://" + conf.address + "/update/"
 	for key, value := range m {
 		url := ""
 		typeOfValue := func(c interface{}) string {
@@ -74,7 +72,7 @@ func urlGenerator(conf config, m map[string]gauge) (urls []string) {
 }
 
 func urlGeneratorCounter(conf config, m map[string]counter) (url string) {
-	server := "http://" + conf.server + ":" + conf.port + "/update/"
+	server := "http://" + conf.address + "/update/"
 	for key, value := range m {
 		typeOfValue := func(c interface{}) string {
 			switch c.(type) {
@@ -167,7 +165,7 @@ func (a *agent) RunWithSerialized() error {
 			return err
 		}
 		for _, metric := range metrics.MetricsArray {
-			url := "http://" + c.server + ":" + c.port + "/update/"
+			url := "http://" + c.address + "/update/"
 			reqBody, err := json.Marshal(metric)
 			if err != nil {
 				return err

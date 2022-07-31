@@ -1,6 +1,5 @@
 server:
-  address: "127.0.0.1"
-  port: "8080"
+  address: "127.0.0.1:8080"
   logfile: "server.log"
   loglevel: 3
   storage: "local"
