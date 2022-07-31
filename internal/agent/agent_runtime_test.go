@@ -20,8 +20,7 @@ func Test_urlGenerator(t *testing.T) {
 			name: "Validate urls",
 			args: args{
 				conf: config{
-					server: "127.0.0.1",
-					port:   "8080",
+					address: "127.0.0.1:8080",
 				},
 				m: map[string]gauge{
 					"Alloc":       2156,
