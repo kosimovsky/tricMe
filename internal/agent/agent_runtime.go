@@ -162,7 +162,6 @@ func (a *agent) RunWithSerialized() error {
 		for _, metric := range metrics.MetricsArray {
 			url := "http://" + c.server + ":" + c.port + "/update/"
 			reqBody, err := json.Marshal(metric)
-			time.Sleep(time.Second)
 			if err != nil {
 				return err
 			}
