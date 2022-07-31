@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -25,9 +27,13 @@ type agent struct {
 }
 
 func NewAgent(serv Sender) *agent {
-	transport := &http.Transport{}
-	transport.MaxIdleConns = 20
-	client := http.Client{Timeout: 20 * time.Second,
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{Timeout: 30 * time.Second,
+			KeepAlive: 30 * time.Second}).DialContext,
+		MaxIdleConns:    30,
+		IdleConnTimeout: 60 * time.Second,
+	}
+	client := http.Client{Timeout: 5 * time.Second,
 		Transport: transport}
 	return &agent{client: &client,
 		serv: serv}
@@ -157,7 +163,8 @@ func (a *agent) RunWithSerialized() error {
 		case <-ticker.C:
 
 		case <-ctx.Done():
-			return nil
+			err := fmt.Errorf("timeout exceeded")
+			return err
 		}
 		for _, metric := range metrics.MetricsArray {
 			url := "http://" + c.server + ":" + c.port + "/update/"
@@ -169,15 +176,13 @@ func (a *agent) RunWithSerialized() error {
 
 			req, err := a.serv.NewRequestWithContext(ctx, http.MethodPost, url, nil, bodyReader)
 			if err != nil {
-				logrus.Printf("error making request: %s\n%v", err.Error(), req)
+				logrus.Errorf("error making request: %s\n%v", err.Error(), req)
 				return err
 			}
 			resp, err := a.client.Do(req)
 			if err != nil {
-				logrus.Printf("error doing request: %s\n", err.Error())
-				return err
-			}
-			if resp.StatusCode != http.StatusOK {
+				logrus.Errorf("error doing request: %s\n", err.Error())
+			} else if resp.StatusCode != http.StatusOK {
 				err := resp.Body.Close()
 				if err != nil {
 					return err

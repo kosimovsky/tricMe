@@ -31,6 +31,6 @@ func main() {
 
 	defer newAgent.Stop()
 	if err := newAgent.RunWithSerialized(); err != nil {
-		logrus.Fatalf("error while running agent: %s", err.Error())
+		logrus.Errorf("error while running agent: %s", err.Error())
 	}
 }
