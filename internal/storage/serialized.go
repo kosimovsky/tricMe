@@ -4,21 +4,21 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	"github.com/kosimovsky/tricMe"
+	tricme "github.com/kosimovsky/tricMe"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
 
 type metricsMap struct {
-	MetricsMap map[string]tricMe.Metrics
+	MetricsMap map[string]tricme.Metrics
 }
 
 func NewMetricsMap() *metricsMap {
-	m := make(map[string]tricMe.Metrics)
+	m := make(map[string]tricme.Metrics)
 	return &metricsMap{MetricsMap: m}
 }
 
-func (m *metricsMap) Store(metric tricMe.Metrics) {
+func (m *metricsMap) Store(metric tricme.Metrics) {
 	key := generateKeyHash(metric.ID, metric.MType)
 	found := false
 
@@ -39,7 +39,7 @@ func (m *metricsMap) Store(metric tricMe.Metrics) {
 	}
 }
 
-func (m *metricsMap) SingleMetric(id, mType string) (*tricMe.Metrics, error) {
+func (m *metricsMap) SingleMetric(id, mType string) (*tricme.Metrics, error) {
 	key := generateKeyHash(id, mType)
 	if value, ok := m.MetricsMap[key]; ok {
 		return &value, nil

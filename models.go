@@ -1,4 +1,4 @@
-package tricMe
+package tricme
 
 type Metrics struct {
 	ID    string   `json:"id"`              // имя метрики

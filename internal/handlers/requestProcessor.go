@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	tricme "github.com/kosimovsky/tricMe"
 	"io"
 	"net/http"
 	"regexp"
@@ -10,12 +11,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
-
-	"github.com/kosimovsky/tricMe"
 )
 
 func (h *Handler) updateMetric(c *gin.Context) {
-	m := new(tricMe.Metrics)
+	m := new(tricme.Metrics)
 
 	if err := json.NewDecoder(c.Request.Body).Decode(m); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, err)
@@ -29,7 +28,7 @@ func (h *Handler) valueOf(c *gin.Context) {
 	if err != nil {
 		c.Status(http.StatusBadRequest)
 	}
-	var inMetric tricMe.Metrics
+	var inMetric tricme.Metrics
 
 	err = json.Unmarshal(bodyData, &inMetric)
 	if err != nil {
@@ -41,18 +40,8 @@ func (h *Handler) valueOf(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	outData, err := json.Marshal(outMetric)
-	if err != nil {
-		logrus.Errorln(err.Error())
-		c.Status(http.StatusBadRequest)
-		return
-	}
-	_, err = c.Writer.Write(outData)
-	if err != nil {
-		logrus.Errorln(err.Error())
-		return
-	}
-	c.Status(http.StatusOK)
+
+	c.JSON(http.StatusOK, outMetric)
 }
 
 func (h *Handler) updateGauge(c *gin.Context) {
@@ -134,8 +123,8 @@ There are some metrics for you.`,
 	})
 }
 
-func convert(mType, id, content string) tricMe.Metrics {
-	m := new(tricMe.Metrics)
+func convert(mType, id, content string) tricme.Metrics {
+	m := new(tricme.Metrics)
 
 	m.ID = id
 	m.MType = mType

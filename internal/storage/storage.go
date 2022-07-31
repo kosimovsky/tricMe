@@ -1,16 +1,16 @@
 package storage
 
-import "github.com/kosimovsky/tricMe"
+import tricme "github.com/kosimovsky/tricMe"
 
 type Storage struct {
 	StorageType string
 }
 
 type Storekeeper interface {
-	Store(metrics tricMe.Metrics)
+	Store(metrics tricme.Metrics)
 	Output() error
 	Marshal() ([]byte, error)
-	SingleMetric(id, mType string) (*tricMe.Metrics, error)
+	SingleMetric(id, mType string) (*tricme.Metrics, error)
 	Current() map[string]interface{}
 }
 
