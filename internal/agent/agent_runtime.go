@@ -8,6 +8,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -46,9 +47,21 @@ type config struct {
 }
 
 func newConfig() *config {
+	poll := viper.GetString("agent.pollInterval")
+	report := viper.GetString("agent.reportInterval")
 	return &config{address: viper.GetString("server.address"),
-		pollInterval:   viper.GetInt("agent.pollInterval"),
-		reportInterval: viper.GetInt("agent.reportInterval")}
+		pollInterval:   cut(poll),
+		reportInterval: cut(report)}
+}
+
+func cut(s string) int {
+	if len(s) > 1 {
+		reg := regexp.MustCompile(`\D`)
+		trimmed := reg.ReplaceAllString(s, "${1}")
+		result, _ := strconv.Atoi(trimmed)
+		return result
+	}
+	return 1
 }
 
 func urlGenerator(conf config, m map[string]gauge) (urls []string) {

@@ -8,6 +8,6 @@ server:
 
 agent:
   logfile: "agent.log"
-  pollInterval: 2
-  reportInterval: 10
+  pollInterval: "2s"
+  reportInterval: "10s"
   metricsType: "memStat"
