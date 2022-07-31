@@ -30,7 +30,7 @@ func main() {
 	newAgent := agent.NewAgent(serv)
 
 	defer newAgent.Stop()
-	if err := newAgent.Run(); err != nil {
+	if err := newAgent.RunWithSerialized(); err != nil {
 		logrus.Fatalf("error while running agent: %s", err.Error())
 	}
 }

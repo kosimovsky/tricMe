@@ -27,7 +27,7 @@ func (s *service) NewRequestWithContext(ctx context.Context, method, url string,
 	if headers != nil {
 		r.Header = *headers
 	}
-	r.Header.Set("Content-Type", "text/plain")
-	r.Header.Add("Accept", "text/plain")
+	r.Header.Set("Content-Type", "application/json")
+	r.Header.Add("Accept", "application/json")
 	return r, nil
 }

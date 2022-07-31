@@ -5,7 +5,6 @@ import (
 	"encoding/gob"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -15,6 +14,8 @@ type counter = int64
 type LocalStorage struct {
 	gaugeMetrics   map[string]gauge
 	counterMetrics map[string]counter
+
+	//metricsMap
 }
 
 func NewLocalStorage() *LocalStorage {
@@ -57,39 +58,46 @@ func (s *LocalStorage) DefaultStorage() *LocalStorage {
 	return st
 }
 
-func (s *LocalStorage) Store(metricName, metricValue string, isCounter bool) {
-	found := false
-	if isCounter {
-		v, _ := strconv.ParseInt(metricValue, 10, 64)
-		for key, value := range s.counterMetrics {
-			if metricName == key {
-				found = true
-				if value == 0 {
-					s.counterMetrics[metricName] = v
-				} else {
-					s.counterMetrics[metricName] += v
-				}
-			}
-		}
-		if !found {
-			s.counterMetrics[metricName] = v
-			logrus.Printf("got new COUNTER metric %s with value %s", metricName, metricValue)
-		}
-	} else {
-		v, _ := strconv.ParseFloat(metricValue, 64)
-		for key := range s.gaugeMetrics {
-			if metricName == key {
-				found = true
-				s.gaugeMetrics[key] = v
-			}
-		}
-		if !found {
-			v, _ := strconv.ParseFloat(metricValue, 64)
-			s.gaugeMetrics[metricName] = v
-			logrus.Printf("got new GAUGE metric %s with value %s", metricName, metricValue)
-		}
-	}
-}
+//func (s *LocalStorage) Store(metricName, metricValue string, isCounter bool) {
+//	found := false
+//	if isCounter {
+//		v, _ := strconv.ParseInt(metricValue, 10, 64)
+//		for key, value := range s.counterMetrics {
+//			if metricName == key {
+//				found = true
+//				if value == 0 {
+//					s.counterMetrics[metricName] = v
+//				} else {
+//					s.counterMetrics[metricName] += v
+//				}
+//			}
+//		}
+//		if !found {
+//			s.counterMetrics[metricName] = v
+//			logrus.Printf("got new COUNTER metric %s with value %s", metricName, metricValue)
+//		}
+//	} else {
+//		v, _ := strconv.ParseFloat(metricValue, 64)
+//		for key := range s.gaugeMetrics {
+//			if metricName == key {
+//				found = true
+//				s.gaugeMetrics[key] = v
+//			}
+//		}
+//		if !found {
+//			v, _ := strconv.ParseFloat(metricValue, 64)
+//			s.gaugeMetrics[metricName] = v
+//			logrus.Printf("got new GAUGE metric %s with value %s", metricName, metricValue)
+//		}
+//	}
+//
+//	for i, metric := range s.metricsArray {
+//		v, _ := strconv.ParseInt(metricValue, 10, 64)
+//		if metric.ID == metricName {
+//			metric.Delta = &v
+//		}
+//	}
+//}
 
 func (s *LocalStorage) Output() error {
 	bytesMemStats, err := json.Marshal(s.gaugeMetrics)

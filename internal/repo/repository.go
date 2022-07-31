@@ -13,7 +13,7 @@ type Miner interface {
 func NewMiner(s *Source) (Miner, error) {
 
 	if s.Resources == "memStat" {
-		return runtimemetrics.NewCustomMetrics(), nil
+		return runtimemetrics.NewRuntimeMetrics(), nil
 	}
 	return nil, nil
 }

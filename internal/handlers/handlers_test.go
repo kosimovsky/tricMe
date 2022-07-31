@@ -1,21 +1,19 @@
 package handlers
 
 import (
+	"github.com/gin-gonic/gin"
+	"github.com/kosimovsky/tricMe/internal/storage"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/gin-gonic/gin"
-	"github.com/magiconair/properties/assert"
-	"github.com/stretchr/testify/require"
-
-	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
 func TestHandler_MetricsRouterRouter(t *testing.T) {
 	type handler struct {
-		repos storage.Repositories
+		repos storage.Storekeeper
 	}
 	gin.SetMode(gin.TestMode)
 
@@ -30,7 +28,7 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 		{
 			name: "Test good Status Code",
 			fields: handler{
-				repos: storage.NewLocalStorage().DefaultStorage(),
+				repos: storage.NewMetricsMap(),
 			},
 			statusCode: http.StatusOK,
 			path:       "/update/gauge/Alloc/98479",
@@ -39,7 +37,7 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 		{
 			name: "Test without value",
 			fields: handler{
-				repos: storage.NewLocalStorage().DefaultStorage(),
+				repos: storage.NewMetricsMap(),
 			},
 			statusCode: http.StatusNotFound,
 			path:       "/update/gauge/Alloc",
@@ -48,7 +46,7 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 		{
 			name: "get gauge value",
 			fields: handler{
-				repos: storage.NewLocalStorage().DefaultStorage(),
+				repos: storage.NewMetricsMap(),
 			},
 			statusCode: http.StatusOK,
 			path:       "/value/gauge/Alloc",
@@ -57,7 +55,7 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 		{
 			name: "get start page",
 			fields: handler{
-				repos: storage.NewLocalStorage().DefaultStorage(),
+				repos: storage.NewMetricsMap(),
 			},
 			statusCode: http.StatusOK,
 			path:       "/",
@@ -67,7 +65,7 @@ func TestHandler_MetricsRouterRouter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			h := Handler{
-				repos: tt.fields.repos,
+				keeper: tt.fields.repos,
 			}
 
 			ts := httptest.NewServer(h.MetricsRouter())

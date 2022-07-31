@@ -22,7 +22,12 @@
 </style>
 <h1>{{ .content }}</h1>
 {{ range $key, $value := .Metrics }}
-  <div1>{{ $key }}</div1>  <div2> {{ $value }} </div2> <br>
+  <div1>{{ $value.ID }}</div1>
+    <div2>  {{if not $value.Delta}}
+               type {{ $value.MType }} value {{ $value.Value }}
+            {{ else if not $value.Value }}
+                type {{ $value.MType }} delta {{ $value.Delta }}
+            {{ end }} </div2> <br>
 {{ end }}
 </body>
 </html>

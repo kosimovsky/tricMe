@@ -1,7 +1,9 @@
 package agent
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"strconv"
@@ -88,7 +90,7 @@ func (a *agent) Run() error {
 	ctx := context.Background()
 	c := newConfig()
 	ticker := time.NewTicker(time.Duration(c.reportInterval) * time.Second)
-	metrics := runtimemetrics.NewCustomMetrics()
+	metrics := runtimemetrics.NewRuntimeMetrics()
 	metrics.GenerateMetrics()
 	go func() {
 		for {
@@ -130,6 +132,60 @@ func (a *agent) Run() error {
 		}
 	}
 
+}
+
+func (a *agent) RunWithSerialized() error {
+	ctx := context.Background()
+	c := newConfig()
+	ticker := time.NewTicker(time.Duration(c.reportInterval) * time.Second)
+	metrics := runtimemetrics.SerializedMetrics()
+	metrics.GenerateMetrics()
+	go func() {
+		for {
+			t := time.NewTicker(time.Duration(c.pollInterval) * time.Second)
+			select {
+			case <-t.C:
+				metrics.GenerateMetrics()
+			case <-ctx.Done():
+				t.Stop()
+			}
+		}
+	}()
+
+	for {
+		select {
+		case <-ticker.C:
+
+		case <-ctx.Done():
+			return nil
+		}
+		for _, metric := range metrics.MetricsArray {
+			url := "http://" + c.server + ":" + c.port + "/update/"
+			reqBody, err := json.Marshal(metric)
+			time.Sleep(time.Second)
+			if err != nil {
+				return err
+			}
+			bodyReader := bytes.NewReader(reqBody)
+
+			req, err := a.serv.NewRequestWithContext(ctx, http.MethodPost, url, nil, bodyReader)
+			if err != nil {
+				logrus.Printf("error making request: %s\n%v", err.Error(), req)
+				return err
+			}
+			resp, err := a.client.Do(req)
+			if err != nil {
+				logrus.Printf("error doing request: %s\n", err.Error())
+				return err
+			}
+			if resp.StatusCode != http.StatusOK {
+				err := resp.Body.Close()
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
 }
 
 type gauge = float64

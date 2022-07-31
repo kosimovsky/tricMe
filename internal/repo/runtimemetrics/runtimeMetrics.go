@@ -9,13 +9,13 @@ type gauge = float64
 
 type counter = int64
 
-type CustomMetrics struct {
+type RuntimeMetrics struct {
 	Memstats  map[string]gauge
 	PollCount map[string]counter
 }
 
-func NewCustomMetrics() *CustomMetrics {
-	m := new(CustomMetrics)
+func NewRuntimeMetrics() *RuntimeMetrics {
+	m := new(RuntimeMetrics)
 	cMetrics := make(map[string]gauge, 30)
 	pollCount := make(map[string]counter, 1)
 	m.Memstats = cMetrics
@@ -23,7 +23,7 @@ func NewCustomMetrics() *CustomMetrics {
 	return m
 }
 
-func (m *CustomMetrics) GenerateMetrics() {
+func (m *RuntimeMetrics) GenerateMetrics() {
 	memStats := new(runtime.MemStats)
 	runtime.ReadMemStats(memStats)
 	m.Memstats["Alloc"] = gauge(memStats.Alloc)
