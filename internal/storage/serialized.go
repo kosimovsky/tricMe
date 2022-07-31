@@ -3,7 +3,6 @@ package storage
 import (
 	"crypto/sha1"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/kosimovsky/tricMe"
 	"github.com/sirupsen/logrus"
@@ -45,7 +44,7 @@ func (m *metricsMap) SingleMetric(id, mType string) (*tricMe.Metrics, error) {
 	if value, ok := m.MetricsMap[key]; ok {
 		return &value, nil
 	}
-	err := errors.New(fmt.Sprintf("metric %s of type %s not found", id, mType))
+	err := fmt.Errorf("metric %s of type %s not found", id, mType)
 	return nil, err
 }
 
