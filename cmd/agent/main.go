@@ -13,10 +13,10 @@ import (
 )
 
 func main() {
-	if err := config.InitConfig(); err != nil {
+	if err := config.InitAgentConfig(); err != nil {
 		_ = fmt.Errorf("error while reading config file %v", err.Error())
 	}
-	logfileFromConfig := viper.GetString("agent.logfile")
+	logfileFromConfig := viper.GetString("Logfile")
 	logfile, err := os.OpenFile(logfileFromConfig, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Printf("error occured opening file : %v, %s", err, logfileFromConfig)

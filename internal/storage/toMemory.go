@@ -4,10 +4,12 @@ import (
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
-	tricme "github.com/kosimovsky/tricMe"
+	"strings"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"strings"
+
+	tricme "github.com/kosimovsky/tricMe"
 )
 
 type metrics struct {
@@ -38,7 +40,7 @@ func (m *metrics) Store(metric tricme.Metrics) {
 		m.MetricsMap[key] = metric
 		logrus.Printf("got new metric %s of Type %s", metric.ID, metric.MType)
 	}
-	if storeInterval := viper.GetInt("server.store.storeInterval"); storeInterval == 0 {
+	if storeInterval := viper.GetInt("Interval"); storeInterval == 0 {
 		err := m.Keep()
 		if err != nil {
 			logrus.Printf("error storing metrics: %s", err.Error())

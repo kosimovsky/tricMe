@@ -1,8 +1,9 @@
 package storage
 
 import (
-	tricme "github.com/kosimovsky/tricMe"
 	"github.com/spf13/viper"
+
+	tricme "github.com/kosimovsky/tricMe"
 )
 
 type Storage struct {
@@ -19,7 +20,7 @@ type Storekeeper interface {
 }
 
 func NewStorage(s *Storage) (Storekeeper, error) {
-	if viper.GetString("server.store.storeFile") == "" {
+	if viper.GetString("File") == "" {
 		s.StorageType = ""
 	}
 

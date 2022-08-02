@@ -47,9 +47,9 @@ type config struct {
 }
 
 func newConfig() *config {
-	poll := viper.GetString("agent.pollInterval")
-	report := viper.GetString("agent.reportInterval")
-	return &config{address: viper.GetString("server.address"),
+	poll := viper.GetString("Poll")
+	report := viper.GetString("Report")
+	return &config{address: viper.GetString("Address"),
 		pollInterval:   cut(poll),
 		reportInterval: cut(report)}
 }

@@ -19,10 +19,10 @@ import (
 )
 
 func main() {
-	if err := config.InitConfig(); err != nil {
+	if err := config.InitServerConfig(); err != nil {
 		_ = fmt.Errorf("error while reading config file %v", err.Error())
 	}
-	logfileFromConfig := viper.GetString("server.logfile")
+	logfileFromConfig := viper.GetString("Logfile")
 	logfile, err := os.OpenFile(logfileFromConfig, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Printf("error occured opening file : %v, %s", err, logfileFromConfig)
@@ -32,7 +32,7 @@ func main() {
 	logrus.SetOutput(logfile)
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 
-	store, _ := storage.NewStorage(&storage.Storage{StorageType: viper.GetString("server.storage")})
+	store, _ := storage.NewStorage(&storage.Storage{StorageType: viper.GetString("Storage")})
 	handler := handlers.NewHandler(store)
 	err = store.Restore()
 	if err != nil {
@@ -40,7 +40,7 @@ func main() {
 	}
 	srv := server.NewServer()
 
-	if viper.GetBool("server.debug") {
+	if viper.GetBool("Debug") {
 		logrus.SetLevel(logrus.WarnLevel)
 		logrus.Printf("Server started in debug mode with loglevel: %v", logrus.GetLevel().String())
 		ctx := context.Background()
@@ -62,8 +62,8 @@ func main() {
 		logrus.Printf("Server started in silent mode with loglevel: %v", logrus.GetLevel().String())
 	}
 
-	storeFile := viper.GetString("server.store.storeFile")
-	storeInterval := viper.GetInt("server.store.storeInterval")
+	storeFile := viper.GetString("File")
+	storeInterval := viper.GetInt("Interval")
 
 	if storeFile != "" && storeInterval > 0 {
 		ctx := context.Background()
@@ -84,7 +84,7 @@ func main() {
 	}
 
 	go func() {
-		if err := srv.Run(viper.GetString("server.address"), handler.MetricsRouter()); err != nil {
+		if err := srv.Run(viper.GetString("Address"), handler.MetricsRouter()); err != nil {
 			log.Fatalf("error occured while running server: %s", err.Error())
 		}
 	}()

@@ -2,9 +2,10 @@ package storage
 
 import (
 	"encoding/json"
+	"os"
+
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"os"
 )
 
 type Storer interface {
@@ -65,9 +66,9 @@ type config struct {
 
 func readConfig() *config {
 	return &config{
-		storeInterval: viper.GetInt("server.store.storeInterval"),
-		filename:      viper.GetString("server.store.storeFile"),
-		restore:       viper.GetBool("server.store.restore"),
+		storeInterval: viper.GetInt("Interval"),
+		filename:      viper.GetString("File"),
+		restore:       viper.GetBool("Restore"),
 	}
 }
 
@@ -100,11 +101,11 @@ func (m *metrics) Keep() error {
 func (m *metrics) Restore() error {
 	c := readConfig()
 	if c.restore {
-		restorer, err := newRestorer(c.filename)
+		r, err := newRestorer(c.filename)
 		if err != nil {
 			return err
 		}
-		metric, err := restorer.ReadMetric()
+		metric, err := r.ReadMetric()
 		if err != nil {
 			return err
 		}
