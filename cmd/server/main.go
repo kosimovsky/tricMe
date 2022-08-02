@@ -34,7 +34,10 @@ func main() {
 
 	store, _ := storage.NewStorage(&storage.Storage{StorageType: viper.GetString("server.storage")})
 	handler := handlers.NewHandler(store)
-
+	err = store.Restore()
+	if err != nil {
+		logrus.Error(err.Error())
+	}
 	srv := server.NewServer()
 
 	if viper.GetBool("server.debug") {
@@ -59,6 +62,27 @@ func main() {
 		logrus.Printf("Server started in silent mode with loglevel: %v", logrus.GetLevel().String())
 	}
 
+	storeFile := viper.GetString("server.store.storeFile")
+	storeInterval := viper.GetInt("server.store.storeInterval")
+
+	if storeFile != "" && storeInterval > 0 {
+		ctx := context.Background()
+		go func() {
+			ticker := time.NewTicker(time.Duration(storeInterval) * time.Second)
+			for {
+				select {
+				case <-ticker.C:
+					err := store.Keep()
+					if err != nil {
+						logrus.Printf("error storing metrics to file: %s", err.Error())
+					}
+				case <-ctx.Done():
+					ticker.Stop()
+				}
+			}
+		}()
+	}
+
 	go func() {
 		if err := srv.Run(viper.GetString("server.address"), handler.MetricsRouter()); err != nil {
 			log.Fatalf("error occured while running server: %s", err.Error())
@@ -70,6 +94,6 @@ func main() {
 	sig := <-quit
 	log.Printf("Recieved a signal %v. Server is shutting down...", sig)
 	if err := srv.Shutdown(context.Background()); err != nil {
-		log.Fatalf("error occured while server shutting down : %s", err.Error())
+		log.Printf("error occured while server shutting down : %s", err.Error())
 	}
 }

@@ -33,6 +33,18 @@ func InitConfig() error {
 	if err != nil {
 		return err
 	}
+	err = viper.BindEnv("server.store.storeInterval", "STORE_INTERVAL")
+	if err != nil {
+		return err
+	}
+	err = viper.BindEnv("server.store.storeFile", "STORE_FILE")
+	if err != nil {
+		return err
+	}
+	err = viper.BindEnv("server.store.restore", "RESTORE")
+	if err != nil {
+		return err
+	}
 
 	setGinMode(viper.GetString("server.ginMode"))
 	return nil

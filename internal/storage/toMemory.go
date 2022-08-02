@@ -6,19 +6,20 @@ import (
 	"fmt"
 	tricme "github.com/kosimovsky/tricMe"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"strings"
 )
 
-type metricsMap struct {
+type metrics struct {
 	MetricsMap map[string]tricme.Metrics
 }
 
-func NewMetricsMap() *metricsMap {
+func NewMetricsMap() *metrics {
 	m := make(map[string]tricme.Metrics)
-	return &metricsMap{MetricsMap: m}
+	return &metrics{MetricsMap: m}
 }
 
-func (m *metricsMap) Store(metric tricme.Metrics) {
+func (m *metrics) Store(metric tricme.Metrics) {
 	key := generateKeyHash(metric.ID, metric.MType)
 	found := false
 
@@ -37,9 +38,16 @@ func (m *metricsMap) Store(metric tricme.Metrics) {
 		m.MetricsMap[key] = metric
 		logrus.Printf("got new metric %s of Type %s", metric.ID, metric.MType)
 	}
+	if storeInterval := viper.GetInt("server.store.storeInterval"); storeInterval == 0 {
+		err := m.Keep()
+		if err != nil {
+			logrus.Printf("error storing metrics: %s", err.Error())
+		}
+	}
+
 }
 
-func (m *metricsMap) SingleMetric(id, mType string) (*tricme.Metrics, error) {
+func (m *metrics) SingleMetric(id, mType string) (*tricme.Metrics, error) {
 	key := generateKeyHash(id, mType)
 	if value, ok := m.MetricsMap[key]; ok {
 		return &value, nil
@@ -59,7 +67,7 @@ func generateKeyHash(id, mType string) string {
 }
 
 // Output is for debugging server. To start output every 5 seconds set server.debug to True in config
-func (m *metricsMap) Output() error {
+func (m *metrics) Output() error {
 	data, err := json.Marshal(m.MetricsMap)
 	if err != nil {
 		return err
@@ -78,12 +86,7 @@ func (m *metricsMap) Output() error {
 	return nil
 }
 
-func (m *metricsMap) Marshal() ([]byte, error) {
-	// TODO implement
-	return nil, nil
-}
-
-func (m *metricsMap) Current() map[string]interface{} {
+func (m *metrics) CurrentValues() map[string]interface{} {
 	currentMetrics := map[string]interface{}{}
 	for key, value := range m.MetricsMap {
 		currentMetrics[key] = value
