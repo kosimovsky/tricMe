@@ -65,10 +65,10 @@ func InitServerConfig() error {
 	}
 
 	setGinMode(viper.GetString("GinMode"))
-	err = viper.WriteConfig()
-	if err != nil {
-		return err
-	}
+	//err = viper.WriteConfig()
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
@@ -133,9 +133,9 @@ func InitAgentConfig() error {
 			return err
 		}
 	}
-	err = viper.WriteConfig()
-	if err != nil {
-		return err
-	}
+	//err = viper.WriteConfig()
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
