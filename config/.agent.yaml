@@ -1,0 +1,5 @@
+address: "127.0.0.1:8080"
+logfile: agent.log
+metricstype: memStat
+poll: 10s
+report: 2s

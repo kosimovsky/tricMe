@@ -17,15 +17,28 @@ func InitServerConfig() error {
 	viper.SetConfigName(".server")
 	viper.SetConfigType("yaml")
 
-	viper.SetDefault("Address", "127.0.0.1:8080")
-	viper.SetDefault("Restore", true)
-	viper.SetDefault("Interval", 300)
-	viper.SetDefault("File", "/tmp/devops-metrics-db.json")
-	viper.SetDefault("Logfile", "server.log")
-	viper.SetDefault("Loglevel", 3)
-	viper.SetDefault("GinMode", "release")
-	viper.SetDefault("Debug", false)
-	viper.SetDefault("Storage", "memory")
+	//viper.SetDefault("Address", "")
+	//viper.SetDefault("Restore", "")
+	//viper.SetDefault("Interval", "")
+	//viper.SetDefault("File", "")
+	//viper.SetDefault("Logfile", "server.log")
+	//viper.SetDefault("Loglevel", 3)
+	//viper.SetDefault("GinMode", "release")
+	//viper.SetDefault("Debug", false)
+	//viper.SetDefault("Storage", "memory")
+
+	if addr := os.Getenv("ADDRESS"); addr != "" {
+		viper.Set("Address", addr)
+	}
+	if restore := os.Getenv("RESTORE"); restore != "" {
+		viper.Set("Restore", restore)
+	}
+	if interval := os.Getenv("STORE_INTERVAL"); interval != "" {
+		viper.Set("Interval", interval)
+	}
+	if file := os.Getenv("STORE_FILE"); file != "" {
+		viper.Set("File", file)
+	}
 
 	fSet := pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 
@@ -45,28 +58,15 @@ func InitServerConfig() error {
 	}
 
 	if viper.GetString("Address") == "" {
-		viper.Set("Address", *addr)
-	}
-	if viper.GetString("Restore") == "" {
-		viper.Set("Address", *restore)
-	}
-	if viper.GetString("Interval") == "" {
-		viper.Set("Interval", *interval)
-	}
-	if viper.GetString("File") == "" {
-		viper.Set("File", *file)
-	}
-
-	if addr := os.Getenv("ADDRESS"); addr == "" {
 		viper.Set("Address", addr)
 	}
-	if restore := os.Getenv("RESTORE"); restore == "" {
-		viper.Set("Restore", restore)
+	if viper.GetString("Restore") == "" {
+		viper.Set("Address", restore)
 	}
-	if interval := os.Getenv("STORE_INTERVAL"); interval == "" {
+	if viper.GetString("Interval") == "" {
 		viper.Set("Interval", interval)
 	}
-	if file := os.Getenv("STORE_FILE"); file == "" {
+	if viper.GetString("File") == "" {
 		viper.Set("File", file)
 	}
 
