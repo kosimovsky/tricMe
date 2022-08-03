@@ -59,7 +59,8 @@ func main() {
 			}
 		}()
 	} else {
-		logrus.Printf("Server started in silent mode with loglevel: %v", logrus.GetLevel().String())
+		logrus.Printf("Server started on %s in silent mode with loglevel: %v", viper.GetString("Address"), logrus.GetLevel().String())
+		fmt.Printf("Server started on %s in silent mode with loglevel: %v", viper.GetString("Address"), logrus.GetLevel().String())
 	}
 
 	storeFile := viper.GetString("File")
