@@ -27,19 +27,6 @@ func InitServerConfig() error {
 	viper.SetDefault("Debug", false)
 	viper.SetDefault("Storage", "memory")
 
-	if addr := os.Getenv("ADDRESS"); addr != "" {
-		viper.Set("Address", addr)
-	}
-	if restore := os.Getenv("RESTORE"); restore != "" {
-		viper.Set("Restore", restore)
-	}
-	if interval := os.Getenv("STORE_INTERVAL"); interval != "" {
-		viper.Set("Interval", interval)
-	}
-	if file := os.Getenv("STORE_FILE"); file != "" {
-		viper.Set("File", file)
-	}
-
 	fSet := pflag.NewFlagSet(os.Args[0], pflag.ExitOnError)
 
 	addr := fSet.StringP("address", "a", "127.0.0.1:8080", "address for server")
@@ -68,6 +55,19 @@ func InitServerConfig() error {
 	}
 	if viper.GetString("File") == "" {
 		viper.Set("File", *file)
+	}
+
+	if addr := os.Getenv("ADDRESS"); addr == "" {
+		viper.Set("Address", addr)
+	}
+	if restore := os.Getenv("RESTORE"); restore == "" {
+		viper.Set("Restore", restore)
+	}
+	if interval := os.Getenv("STORE_INTERVAL"); interval == "" {
+		viper.Set("Interval", interval)
+	}
+	if file := os.Getenv("STORE_FILE"); file == "" {
+		viper.Set("File", file)
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
