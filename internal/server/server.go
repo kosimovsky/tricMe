@@ -30,5 +30,5 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
 }
 func validate(address string) string {
-	return strings.TrimLeft(address, `https://`)
+	return strings.TrimLeft(address, `htps:/`)
 }
