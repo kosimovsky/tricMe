@@ -22,7 +22,7 @@ func main() {
 	if err := config.InitServerConfig(); err != nil {
 		_ = fmt.Errorf("error while reading config file %v", err.Error())
 	}
-	logfileFromConfig := viper.GetString("Logfile")
+	logfileFromConfig := viper.GetString("logfile")
 	logfile, err := os.OpenFile(logfileFromConfig, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Printf("error occured opening file : %v, %s", err, logfileFromConfig)
@@ -32,7 +32,7 @@ func main() {
 	logrus.SetOutput(logfile)
 	logrus.SetFormatter(new(logrus.JSONFormatter))
 
-	store, _ := storage.NewStorage(&storage.Storage{StorageType: viper.GetString("Storage")})
+	store, _ := storage.NewStorage(&storage.Storage{StorageType: viper.GetString("storage")})
 	handler := handlers.NewHandler(store)
 	err = store.Restore()
 	if err != nil {
@@ -40,7 +40,7 @@ func main() {
 	}
 	srv := server.NewServer()
 
-	if viper.GetBool("Debug") {
+	if viper.GetBool("debug") {
 		logrus.SetLevel(logrus.WarnLevel)
 		logrus.Printf("Server started in debug mode with loglevel: %v", logrus.GetLevel().String())
 		ctx := context.Background()
@@ -59,17 +59,16 @@ func main() {
 			}
 		}()
 	} else {
-		logrus.Printf("Server started on %s in silent mode with loglevel: %v", viper.GetString("Address"), logrus.GetLevel().String())
-		fmt.Printf("Server started on %s in silent mode with loglevel: %v", viper.GetString("Address"), logrus.GetLevel().String())
+		logrus.Printf("Server started on %s in silent mode with loglevel: %v", viper.GetString("address"), logrus.GetLevel().String())
 	}
 
-	storeFile := viper.GetString("File")
-	storeInterval := viper.GetInt("Interval")
+	storeFile := viper.GetString("file")
+	storeInterval := viper.GetDuration("interval")
 
 	if storeFile != "" && storeInterval > 0 {
 		ctx := context.Background()
 		go func() {
-			ticker := time.NewTicker(time.Duration(storeInterval) * time.Second)
+			ticker := time.NewTicker(storeInterval)
 			for {
 				select {
 				case <-ticker.C:
@@ -85,7 +84,7 @@ func main() {
 	}
 
 	go func() {
-		if err := srv.Run(viper.GetString("Address"), handler.MetricsRouter()); err != nil {
+		if err := srv.Run(viper.GetString("address"), handler.MetricsRouter()); err != nil {
 			log.Fatalf("error occured while running server: %s", err.Error())
 		}
 	}()

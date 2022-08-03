@@ -2,12 +2,12 @@ package config
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"os"
+	"time"
 )
 
 // InitServerConfig reads configuration file and ENV for server
@@ -16,16 +16,6 @@ func InitServerConfig() error {
 	viper.AddConfigPath("config")
 	viper.SetConfigName(".server")
 	viper.SetConfigType("yaml")
-
-	//viper.SetDefault("Address", "")
-	//viper.SetDefault("Restore", "")
-	//viper.SetDefault("Interval", "")
-	//viper.SetDefault("File", "")
-	//viper.SetDefault("Logfile", "server.log")
-	//viper.SetDefault("Loglevel", 3)
-	//viper.SetDefault("GinMode", "release")
-	//viper.SetDefault("Debug", false)
-	//viper.SetDefault("Storage", "memory")
 
 	if addr := os.Getenv("ADDRESS"); addr != "" {
 		viper.Set("Address", addr)
@@ -44,7 +34,7 @@ func InitServerConfig() error {
 
 	addr := fSet.StringP("address", "a", "127.0.0.1:8080", "address for server")
 	restore := fSet.BoolP("restore", "r", true, "restore metrics from file")
-	interval := fSet.IntP("interval", "i", 300, "interval for storing metrics to file")
+	interval := fSet.DurationP("interval", "i", 300, "interval for storing metrics to file")
 	file := fSet.StringP("file", "f", "/tmp/devops-metrics-db.json", "file to store metrics")
 	err := viper.BindPFlags(fSet)
 	if err != nil {
@@ -102,12 +92,6 @@ func InitAgentConfig() error {
 	viper.SetConfigName(".agent")
 	viper.SetConfigType("yaml")
 
-	viper.SetDefault("Address", "127.0.0.1:8080")
-	viper.SetDefault("Poll", "10s")
-	viper.SetDefault("Report", "2s")
-	viper.SetDefault("Logfile", "agent.log")
-	viper.SetDefault("MetricsType", "memStat")
-
 	if addr := os.Getenv("ADDRESS"); addr != "" {
 		viper.Set("Address", addr)
 	}
@@ -122,8 +106,8 @@ func InitAgentConfig() error {
 
 	addr := fSet.StringP("address", "a", "127.0.0.1:8080",
 		`server address to which metrics should be sent`)
-	poll := fSet.StringP("poll", "r", "10s", "report interval")
-	report := fSet.StringP("report", "p", "2s", "poll interval")
+	poll := fSet.DurationP("poll", "r", 2*time.Second, "report interval")
+	report := fSet.DurationP("report", "p", 10*time.Second, "poll interval")
 
 	err := viper.BindPFlags(fSet)
 	if err != nil {

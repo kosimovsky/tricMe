@@ -8,7 +8,6 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"regexp"
 	"strconv"
 	"time"
 
@@ -42,26 +41,17 @@ func NewAgent(serv Sender) *agent {
 
 type config struct {
 	address        string
-	pollInterval   int
-	reportInterval int
+	pollInterval   time.Duration
+	reportInterval time.Duration
 }
 
 func newConfig() *config {
-	poll := viper.GetString("Poll")
-	report := viper.GetString("Report")
+	poll := viper.GetDuration("poll")
+	report := viper.GetDuration("report")
 	return &config{address: viper.GetString("Address"),
-		pollInterval:   cut(poll),
-		reportInterval: cut(report)}
-}
-
-func cut(s string) int {
-	if len(s) > 1 {
-		reg := regexp.MustCompile(`\D`)
-		trimmed := reg.ReplaceAllString(s, "${1}")
-		result, _ := strconv.Atoi(trimmed)
-		return result
+		pollInterval:   poll,
+		reportInterval: report,
 	}
-	return 1
 }
 
 func urlGenerator(conf config, m map[string]gauge) (urls []string) {
@@ -154,12 +144,12 @@ func (a *agent) Run() error {
 func (a *agent) RunWithSerialized() error {
 	ctx := context.Background()
 	c := newConfig()
-	ticker := time.NewTicker(time.Duration(c.reportInterval) * time.Second)
+	ticker := time.NewTicker(c.reportInterval)
 	metrics := runtimemetrics.SerializedMetrics()
 	metrics.GenerateMetrics()
 	go func() {
 		for {
-			t := time.NewTicker(time.Duration(c.pollInterval) * time.Second)
+			t := time.NewTicker(c.pollInterval)
 			select {
 			case <-t.C:
 				metrics.GenerateMetrics()

@@ -16,7 +16,7 @@ func main() {
 	if err := config.InitAgentConfig(); err != nil {
 		_ = fmt.Errorf("error while reading config file %v", err.Error())
 	}
-	logfileFromConfig := viper.GetString("Logfile")
+	logfileFromConfig := viper.GetString("logfile")
 	logfile, err := os.OpenFile(logfileFromConfig, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Printf("error occured opening file : %v, %s", err, logfileFromConfig)
@@ -25,7 +25,7 @@ func main() {
 	logrus.New()
 	logrus.SetOutput(logfile)
 	logrus.SetFormatter(new(logrus.JSONFormatter))
-	m, _ := repo.NewMiner(&repo.Source{Resources: viper.GetString("agent.metricsType")})
+	m, _ := repo.NewMiner(&repo.Source{Resources: viper.GetString("metricstype")})
 	serv := service.New(m)
 	newAgent := agent.NewAgent(serv)
 
