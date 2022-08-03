@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -16,7 +17,7 @@ func NewServer() *Server {
 
 func (s *Server) Run(address string, handler http.Handler) error {
 	s.httpServer = &http.Server{
-		Addr:           address,
+		Addr:           validate(address),
 		Handler:        handler,
 		MaxHeaderBytes: 1 << 20,
 		ReadTimeout:    10 * time.Second,
@@ -27,4 +28,7 @@ func (s *Server) Run(address string, handler http.Handler) error {
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
+}
+func validate(address string) string {
+	return strings.TrimLeft(address, `https://`)
 }
