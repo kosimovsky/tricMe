@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+
 	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
@@ -17,6 +19,7 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 	router := gin.New()
 
 	htmlStart := router.Group("/")
+	htmlStart.Use(gzip.Gzip(gzip.DefaultCompression))
 	{
 		router.LoadHTMLGlob("templates/*.html")
 		htmlStart.GET("/", h.startPage)
@@ -25,6 +28,7 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 	update := router.Group("/update")
 	{
 		update.POST("", h.statusNotImplemented)
+		update.Use(gzip.Gzip(gzip.DefaultCompression))
 		update.POST("/", h.updateMetric)
 		r := update.Group("/:regex", h.statusNotImplementedRegex)
 		{
@@ -59,6 +63,7 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 	{
 		value.GET("", h.statusNotImplemented)
 		value.POST("/", h.valueOf)
+		value.Use(gzip.Gzip(gzip.DefaultCompression))
 		r := value.Group("/:regex", h.statusNotImplementedRegex)
 		{
 			r.GET("", h.statusNotImplementedRegex)

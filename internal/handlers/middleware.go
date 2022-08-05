@@ -15,7 +15,6 @@ func (h *Handler) validateValue(c *gin.Context) {
 	}
 	if !reg.MatchString(value) {
 		h.statusBadRequest(c)
-		println("here!!!")
 		return
 	} else {
 		h.updateCounter(c)
