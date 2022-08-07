@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type Storer interface {
@@ -58,20 +57,6 @@ func (p *storer) Close() error {
 	return p.file.Close()
 }
 
-type config struct {
-	storeInterval int
-	filename      string
-	restore       bool
-}
-
-func readConfig() *config {
-	return &config{
-		storeInterval: viper.GetInt("Interval"),
-		filename:      viper.GetString("File"),
-		restore:       viper.GetBool("Restore"),
-	}
-}
-
 func (r *restorer) ReadMetric() (*metrics, error) {
 	m := &metrics{}
 	if err := r.decoder.Decode(&m); err != nil {
@@ -84,24 +69,28 @@ func (r *restorer) Close() error {
 	return r.file.Close()
 }
 
-func (m *metrics) Keep() error {
-	c := readConfig()
-	s, err := newStorer(c.filename)
+func (m *metrics) Keep(filename string) error {
+	s, err := newStorer(filename)
 	if err != nil {
 		return err
 	}
 	defer s.Close()
+	m.mx.Lock()
+	defer m.mx.Unlock()
 	err = s.WriteMetric(m)
 	if err != nil {
 		logrus.Error(err.Error())
 	}
+	err = s.Close()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (m *metrics) Restore() error {
-	c := readConfig()
-	if c.restore {
-		r, err := newRestorer(c.filename)
+func (m *metrics) Restore(filename string, flag bool) error {
+	if flag {
+		r, err := newRestorer(filename)
 		if err != nil {
 			return err
 		}

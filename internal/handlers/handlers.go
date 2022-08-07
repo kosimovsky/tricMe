@@ -62,8 +62,8 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 	value := router.Group("/value")
 	{
 		value.GET("", h.statusNotImplemented)
+		update.Use(gzip.Gzip(gzip.DefaultCompression))
 		value.POST("/", h.valueOf)
-		value.Use(gzip.Gzip(gzip.DefaultCompression))
 		r := value.Group("/:regex", h.statusNotImplementedRegex)
 		{
 			r.GET("", h.statusNotImplementedRegex)

@@ -5,14 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
+	"sync"
 
 	tricme "github.com/kosimovsky/tricMe"
+	"github.com/sirupsen/logrus"
 )
 
 type metrics struct {
+	mx         sync.RWMutex
 	MetricsMap map[string]tricme.Metrics
 }
 
@@ -25,6 +25,8 @@ func (m *metrics) Store(metric tricme.Metrics) {
 	key := generateKeyHash(metric.ID, metric.MType)
 	found := false
 
+	m.mx.Lock()
+	defer m.mx.Unlock()
 	for k, v := range m.MetricsMap {
 		if k == key {
 			found = true
@@ -40,8 +42,9 @@ func (m *metrics) Store(metric tricme.Metrics) {
 		m.MetricsMap[key] = metric
 		logrus.Printf("got new metric %s of Type %s", metric.ID, metric.MType)
 	}
-	if storeInterval := viper.GetInt("Interval"); storeInterval == 0 {
-		err := m.Keep()
+	c := ReadConfig()
+	if c.StoreInterval == 0 {
+		err := m.Keep(c.Filename)
 		if err != nil {
 			logrus.Printf("error storing metrics: %s", err.Error())
 		}
@@ -51,6 +54,8 @@ func (m *metrics) Store(metric tricme.Metrics) {
 
 func (m *metrics) SingleMetric(id, mType string) (*tricme.Metrics, error) {
 	key := generateKeyHash(id, mType)
+	m.mx.RLock()
+	defer m.mx.RUnlock()
 	if value, ok := m.MetricsMap[key]; ok {
 		return &value, nil
 	}
