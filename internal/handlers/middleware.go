@@ -36,8 +36,24 @@ func (h *Handler) compressHandler(c *gin.Context) {
 			return
 		}
 		defer gz.Close()
-
 		c.Writer.Header().Set("Content-Encoding", "gzip")
+		//c.Next()
+	}
+}
+
+func (h *Handler) compressValueHandler(c *gin.Context) {
+	if !strings.Contains(c.Request.Header.Get("Accept-Encoding"), "gzip") {
 		c.Next()
+	} else {
+		fmt.Println("here")
+
+		gz, err := gzip.NewWriterLevel(c.Writer, gzip.DefaultCompression)
+		if err != nil {
+			logrus.Error(err.Error())
+			return
+		}
+		defer gz.Close()
+		c.Writer.Header().Set("Content-Encoding", "gzip")
+		//c.Next()
 	}
 }
