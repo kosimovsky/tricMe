@@ -100,3 +100,42 @@ func (m *metrics) CurrentValues() map[string]interface{} {
 	}
 	return currentMetrics
 }
+
+func TestMetrics() *metrics {
+	mMap := new(metrics)
+	rv := 0.4246374970712657
+	pollCount := int64(15)
+	totallAlloc := float64(2794104)
+	mallocs := float64(23543)
+	alloc := float64(2794104)
+
+	tMap := map[string]tricme.Metrics{
+		"03e66670c529012c38b396b1872d680ead69f624": {
+			ID:    "RandomValue",
+			MType: "gauge",
+			Value: &rv,
+		},
+		"076f524e410c90c19cd689e8f00e598556cf4468": {
+			Delta: &pollCount,
+			ID:    "PollCount",
+			MType: "counter",
+		},
+		"330f5a124e1cc3957b90ad0f3add29fa1ba58a1c": {
+			ID:    "TotalAlloc",
+			MType: "gauge",
+			Value: &totallAlloc,
+		},
+		"d050d8574c1fc8794832f6e2eca94604ba103529": {
+			ID:    "Mallocs",
+			MType: "gauge",
+			Value: &mallocs,
+		},
+		"f4bf2f6d4d4e2c54f0e23bc8268dfc7531e37653": {
+			ID:    "Alloc",
+			MType: "gauge",
+			Value: &alloc,
+		},
+	}
+	mMap.MetricsMap = tMap
+	return mMap
+}

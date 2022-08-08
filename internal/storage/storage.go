@@ -28,6 +28,8 @@ func NewStorage(s *Storage) (Storekeeper, error) {
 	switch s.StorageType {
 	case "memory":
 		return NewMetricsMap(), nil
+	case "test":
+		return TestMetrics(), nil
 	default:
 		return NewMetricsMap(), nil
 	}
