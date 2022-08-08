@@ -17,9 +17,9 @@ func NewHandler(keeper storage.Storekeeper) *Handler {
 
 func (h *Handler) MetricsRouter() *gin.Engine {
 	router := gin.New()
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	htmlStart := router.Group("/")
-	htmlStart.Use(gzip.Gzip(gzip.DefaultCompression))
 	{
 		router.LoadHTMLGlob("templates/*.html")
 		htmlStart.GET("/", h.startPage)
@@ -28,7 +28,6 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 	update := router.Group("/update")
 	{
 		update.POST("", h.statusNotImplemented)
-		update.Use(h.compressHandler)
 		update.POST("/", h.updateMetric)
 		r := update.Group("/:regex", h.statusNotImplementedRegex)
 		{
@@ -62,7 +61,6 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 	value := router.Group("/value")
 	{
 		value.GET("", h.statusNotImplemented)
-		value.Use(h.compressHandler)
 		value.POST("/", h.valueOf)
 		r := value.Group("/:regex", h.statusNotImplementedRegex)
 		{
