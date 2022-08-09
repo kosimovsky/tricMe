@@ -61,7 +61,7 @@ func InitServerConfig() error {
 	}
 
 	if err := viper.ReadInConfig(); err != nil {
-		_, err = fmt.Fprintln(os.Stderr, "Use config file:", viper.ConfigFileUsed())
+		_, err = fmt.Fprintln(os.Stderr, "Use serverConfig file:", viper.ConfigFileUsed())
 		if err != nil {
 			return err
 		}
@@ -137,4 +137,48 @@ func InitAgentConfig() error {
 		}
 	}
 	return nil
+}
+
+type serverConfig struct {
+	Address       string
+	Debug         bool
+	GinMode       string
+	Logfile       string
+	Loglevel      int
+	Storage       string
+	StoreInterval time.Duration
+	Filename      string
+	Restore       bool
+}
+
+type agentConfig struct {
+	Address     string
+	Logfile     string
+	MetricsType string
+	Poll        time.Duration
+	Report      time.Duration
+}
+
+func AgentConfig() *agentConfig {
+	return &agentConfig{
+		Address:     viper.GetString("Address"),
+		Logfile:     viper.GetString("Logfile"),
+		MetricsType: viper.GetString("MetricsType"),
+		Poll:        viper.GetDuration("Poll"),
+		Report:      viper.GetDuration("Report"),
+	}
+}
+
+func ServerConfig() *serverConfig {
+	return &serverConfig{
+		Address:       viper.GetString("Address"),
+		Debug:         viper.GetBool("Debug"),
+		GinMode:       viper.GetString("ginMode"),
+		Logfile:       viper.GetString("Logfile"),
+		Loglevel:      viper.GetInt("Loglevel"),
+		Storage:       viper.GetString("Storage"),
+		StoreInterval: viper.GetDuration("Interval"),
+		Filename:      viper.GetString("File"),
+		Restore:       viper.GetBool("Restore"),
+	}
 }

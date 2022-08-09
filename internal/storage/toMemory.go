@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	tricme "github.com/kosimovsky/tricMe"
+	"github.com/kosimovsky/tricMe/config"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,7 +43,7 @@ func (m *metrics) Store(metric tricme.Metrics) {
 		m.MetricsMap[key] = metric
 		logrus.Printf("got new metric %s of Type %s", metric.ID, metric.MType)
 	}
-	c := ReadConfig()
+	c := config.ServerConfig()
 	if c.StoreInterval == 0 {
 		err := m.Keep(c.Filename)
 		if err != nil {

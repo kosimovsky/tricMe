@@ -81,10 +81,6 @@ func (m *metrics) Keep(filename string) error {
 	if err != nil {
 		logrus.Error(err.Error())
 	}
-	err = s.Close()
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
