@@ -11,17 +11,20 @@ import (
 
 func main() {
 	if err := config.InitAgentConfig(); err != nil {
-		_ = fmt.Errorf("error while reading config file %v", err.Error())
+		fmt.Printf("error while reading config file %s", err.Error())
 	}
 	c := config.AgentConfig()
 	agentLog := logger.NewLogger()
 	agentLog.Default(c.Logfile)
-	m, _ := repo.NewMiner(&repo.Source{Resources: c.MetricsType})
+	m, err := repo.NewMiner(&repo.Source{Resources: c.MetricsType})
+	if err != nil {
+		agentLog.Error(err)
+	}
 	serv := service.New(m)
 	newAgent := agent.NewAgent(serv)
 
 	defer newAgent.Stop()
-	if err := newAgent.RunWithSerialized(); err != nil {
+	if err = newAgent.Run(); err != nil {
 		agentLog.Errorf("error while running agent: %s", err.Error())
 	}
 }

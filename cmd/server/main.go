@@ -17,16 +17,19 @@ import (
 
 func main() {
 	if err := config.InitServerConfig(); err != nil {
-		_ = fmt.Errorf("error while reading config file %v", err.Error())
+		fmt.Printf("error while reading config file %s", err.Error())
 	}
 	c := config.ServerConfig()
 
 	logMe := logger.NewLogger()
 	logMe.Default(c.Logfile)
 
-	store, _ := storage.NewStorage(&storage.Storage{StorageType: c.Storage})
+	store, err := storage.NewStorage(&storage.Storage{StorageType: c.Storage})
+	if err != nil {
+		logMe.Error(err)
+	}
 	handler := handlers.NewHandler(store)
-	err := store.Restore(c.Filename, c.Restore)
+	err = store.Restore(c.Filename, c.Restore)
 	if err != nil {
 		logMe.Error(err.Error())
 	}
@@ -41,7 +44,7 @@ func main() {
 			for {
 				select {
 				case <-ticker.C:
-					err := store.Output()
+					err = store.Output()
 					if err != nil {
 						logMe.Printf("error output: %s", err.Error())
 					}
@@ -60,7 +63,7 @@ func main() {
 			ticker := time.NewTicker(c.StoreInterval)
 			select {
 			case <-ticker.C:
-				err := store.Keep(c.Filename)
+				err = store.Keep(c.Filename)
 				if err != nil {
 					logMe.Printf("error storing metrics to file: %s", err.Error())
 				}
@@ -71,7 +74,7 @@ func main() {
 	}
 
 	go func() {
-		if err := srv.Run(c.Address, handler.MetricsRouter()); err != nil {
+		if err = srv.Run(c.Address, handler.MetricsRouter()); err != nil {
 			logMe.Fatalf("error occured while running server: %s", err.Error())
 		}
 	}()
@@ -80,7 +83,7 @@ func main() {
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	sig := <-quit
 	logMe.Printf("Recieved a signal %v. Server is shutting down...", sig)
-	if err := srv.Shutdown(context.Background()); err != nil {
+	if err = srv.Shutdown(context.Background()); err != nil {
 		logMe.Printf("error occured while server shutting down : %s", err.Error())
 	}
 }

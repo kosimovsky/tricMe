@@ -2,9 +2,8 @@ package storage
 
 import (
 	"encoding/json"
-	"os"
-
 	"github.com/sirupsen/logrus"
+	"os"
 )
 
 type Storer interface {
@@ -70,13 +69,13 @@ func (r *restorer) Close() error {
 }
 
 func (m *metrics) Keep(filename string) error {
+	m.mx.Lock()
+	defer m.mx.Unlock()
 	s, err := newStorer(filename)
 	if err != nil {
 		return err
 	}
 	defer s.Close()
-	m.mx.Lock()
-	defer m.mx.Unlock()
 	err = s.WriteMetric(m)
 	if err != nil {
 		logrus.Error(err.Error())
@@ -90,6 +89,7 @@ func (m *metrics) Restore(filename string, flag bool) error {
 		if err != nil {
 			return err
 		}
+		defer r.Close()
 		metric, err := r.ReadMetric()
 		if err != nil {
 			return err
