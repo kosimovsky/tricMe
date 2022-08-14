@@ -14,7 +14,6 @@
 # Logfiles
 *.log
 *.json
-!test.json
 
 # Binaries
 cmd/agent/main

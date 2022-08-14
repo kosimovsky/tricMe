@@ -6,84 +6,56 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/kosimovsky/tricMe/config"
 	"github.com/kosimovsky/tricMe/internal/handlers"
-	"github.com/kosimovsky/tricMe/internal/logger"
+	"github.com/kosimovsky/tricMe/internal/log"
 	"github.com/kosimovsky/tricMe/internal/server"
 	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
 func main() {
 	if err := config.InitServerConfig(); err != nil {
-		fmt.Printf("error while reading config file %s", err.Error())
+		panic(fmt.Sprintf("error while reading config file %s", err.Error()))
 	}
-	c := config.ServerConfig()
+	c := config.NewServerConfig()
 
-	logMe := logger.NewLogger()
-	logMe.Default(c.Logfile)
-
-	store, err := storage.NewStorage(&storage.Storage{StorageType: c.Storage})
+	logger, err := log.NewLogger(c.Logfile)
 	if err != nil {
-		logMe.Error(err)
+		fmt.Printf("error occurs while logger initialization: %s", err.Error())
+		os.Exit(1)
+	}
+	defer logger.Close()
+	store, err := storage.NewStorage(c.Storage)
+	if err != nil {
+		logger.Error(err)
 	}
 	handler := handlers.NewHandler(store)
 	err = store.Restore(c.Filename, c.Restore)
 	if err != nil {
-		logMe.Error(err.Error())
+		logger.Error(err.Error())
 	}
-	srv := server.NewServer()
+	srv := server.NewServer(c.Address, handler.MetricsRouter())
 
 	if c.Debug {
-		logMe.SetWarnLevel()
-		logMe.Printf("Server started in debug mode with loglevel: %v", logMe.GetLevel().String())
-		ctx := context.Background()
-		go func() {
-			ticker := time.NewTicker(5 * time.Second)
-			for {
-				select {
-				case <-ticker.C:
-					err = store.Output()
-					if err != nil {
-						logMe.Printf("error output: %s", err.Error())
-					}
-				case <-ctx.Done():
-					ticker.Stop()
-				}
-			}
-		}()
+		logger.SetWarnLevel()
+		logger.Printf("Server started in debug mode with loglevel: %v", logger.GetLevel().String())
+		go store.Output(logger)
 	} else {
-		logMe.Printf("Server started on %s in silent mode with loglevel: %v", c.Address, logMe.GetLevel().String())
+		logger.Printf("Server started on %s in silent mode with loglevel: %v", c.Address, logger.GetLevel().String())
 	}
 
 	if c.Filename != "" && c.StoreInterval > 0 {
-		ctx := context.Background()
-		go func() {
-			ticker := time.NewTicker(c.StoreInterval)
-			select {
-			case <-ticker.C:
-				err = store.Keep(c.Filename)
-				if err != nil {
-					logMe.Printf("error storing metrics to file: %s", err.Error())
-				}
-			case <-ctx.Done():
-				ticker.Stop()
-			}
-		}()
+		go store.Keep(c.Filename, c.StoreInterval, logger)
 	}
 
-	go func() {
-		if err = srv.Run(c.Address, handler.MetricsRouter()); err != nil {
-			logMe.Fatalf("error occured while running server: %s", err.Error())
-		}
-	}()
+	go srv.Run()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	sig := <-quit
-	logMe.Printf("Recieved a signal %v. Server is shutting down...", sig)
+	logger.Printf("Recieved a signal %v. Server is shutting down...", sig)
 	if err = srv.Shutdown(context.Background()); err != nil {
-		logMe.Printf("error occured while server shutting down : %s", err.Error())
+		logger.Printf("error occured while server shutting down : %s", err.Error())
 	}
 }

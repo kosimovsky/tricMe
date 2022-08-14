@@ -1,15 +1,17 @@
 package storage
 
 import (
+	"context"
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	tricme "github.com/kosimovsky/tricMe"
 	"github.com/kosimovsky/tricMe/config"
-	"github.com/sirupsen/logrus"
+	"github.com/kosimovsky/tricMe/internal/log"
 )
 
 type metrics struct {
@@ -23,6 +25,13 @@ func NewMetricsMap() *metrics {
 }
 
 func (m *metrics) Store(metric tricme.Metrics) {
+	c := config.NewServerConfig()
+	logger, err := log.NewLogger(c.Logfile)
+	if err != nil {
+		fmt.Printf("error occurs while logger initialization: %s", err.Error())
+		return
+	}
+	defer logger.Close()
 	key := generateKeyHash(metric.ID, metric.MType)
 	found := false
 
@@ -41,13 +50,13 @@ func (m *metrics) Store(metric tricme.Metrics) {
 	}
 	if !found {
 		m.MetricsMap[key] = metric
-		logrus.Printf("got new metric %s of Type %s", metric.ID, metric.MType)
+		logger.Printf("got new metric %s of Type %s", metric.ID, metric.MType)
 	}
-	c := config.ServerConfig()
+
 	if c.StoreInterval == 0 {
-		err := m.Keep(c.Filename)
+		err = m.keepDirectly(c.Filename)
 		if err != nil {
-			logrus.Printf("error storing metrics: %s", err.Error())
+			logger.Printf("error storing metrics: %s", err.Error())
 		}
 	}
 
@@ -75,23 +84,33 @@ func generateKeyHash(id, mType string) string {
 }
 
 // Output is for debugging server. To start output every 5 seconds set server.debug to True in config
-func (m *metrics) Output() error {
-	data, err := json.Marshal(m.MetricsMap)
-	if err != nil {
-		return err
+func (m *metrics) Output(logger *log.Logger) {
+	ticker := time.NewTicker(5 * time.Second)
+	ctx := context.Background()
+	for {
+		select {
+		case <-ticker.C:
+			data, err := json.Marshal(m.MetricsMap)
+			if err != nil {
+				logger.Errorf(err.Error())
+				return
+			}
+			output := map[string]interface{}{}
+			err = json.Unmarshal(data, &output)
+			if err != nil {
+				logger.Errorf(err.Error())
+				return
+			}
+			final, err := json.MarshalIndent(output, "", " ")
+			if err != nil {
+				logger.Errorf(err.Error())
+				return
+			}
+			println(string(final))
+		case <-ctx.Done():
+			ticker.Stop()
+		}
 	}
-
-	output := map[string]interface{}{}
-	err = json.Unmarshal(data, &output)
-	if err != nil {
-		return err
-	}
-	final, err := json.MarshalIndent(output, "", " ")
-	if err != nil {
-		return err
-	}
-	println(string(final))
-	return nil
 }
 
 func (m *metrics) CurrentValues() map[string]interface{} {
