@@ -1,22 +1,32 @@
 package storage
 
-type Storage struct {
-	StorageType string
+import (
+	"time"
+
+	tricme "github.com/kosimovsky/tricMe"
+	"github.com/kosimovsky/tricMe/internal/log"
+)
+
+type storage struct {
 }
 
-type Repositories interface {
-	Store(metricName, metricValue string, isCounter bool)
-	Output() error
-	Marshal() ([]byte, error)
-	SingleMetric(metricName string, isCounter bool) (string, error)
-	Current() map[string]interface{}
+type Storekeeper interface {
+	Store(metrics tricme.Metrics)
+	Output(logger *log.Logger)
+	Keep(file string, interval time.Duration, logger *log.Logger)
+	Restore(filename string, flag bool) error
+	SingleMetric(id, mType string) (*tricme.Metrics, error)
+	CurrentValues() map[string]interface{}
 }
 
-func NewStorage(s *Storage) (Repositories, error) {
-	switch s.StorageType {
-	case "local":
-		return NewLocalStorage().DefaultStorage(), nil
+func NewStorage(storageType string) (Storekeeper, error) {
+
+	switch storageType {
+	case "memory":
+		return NewMetricsMap(), nil
+	case "test":
+		return TestMetrics(), nil
 	default:
-		return NewLocalStorage().DefaultStorage(), nil
+		return NewMetricsMap(), nil
 	}
 }

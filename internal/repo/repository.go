@@ -1,19 +1,25 @@
 package repo
 
-import "github.com/kosimovsky/tricMe/internal/repo/runtimemetrics"
+import (
+	"context"
+	"io"
+	"net/http"
+	"time"
 
-type Source struct {
-	Resources string
+	"github.com/kosimovsky/tricMe/internal/repo/runtimemetrics"
+)
+
+type source struct {
 }
 
 type Miner interface {
-	GenerateMetrics()
+	GenerateMetrics(ctx context.Context, ticker *time.Ticker)
+	NewRequestWithContext(ctx context.Context, method, url string, headers *http.Header, body io.Reader) (*http.Request, error)
 }
 
-func NewMiner(s *Source) (Miner, error) {
-
-	if s.Resources == "memStat" {
-		return runtimemetrics.NewCustomMetrics(), nil
+func NewMiner(source string) (Miner, error) {
+	if source == "memStat" {
+		return runtimemetrics.NewMetrics(), nil
 	}
 	return nil, nil
 }

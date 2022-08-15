@@ -1,20 +1,23 @@
 package handlers
 
 import (
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+
 	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
 type Handler struct {
-	repos storage.Repositories
+	keeper storage.Storekeeper
 }
 
-func NewHandler(repos storage.Repositories) *Handler {
-	return &Handler{repos: repos}
+func NewHandler(keeper storage.Storekeeper) *Handler {
+	return &Handler{keeper: keeper}
 }
 
 func (h *Handler) MetricsRouter() *gin.Engine {
 	router := gin.New()
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	htmlStart := router.Group("/")
 	{
@@ -25,6 +28,7 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 	update := router.Group("/update")
 	{
 		update.POST("", h.statusNotImplemented)
+		update.POST("/", h.updateMetric)
 		r := update.Group("/:regex", h.statusNotImplementedRegex)
 		{
 			r.POST("", h.statusNotImplementedRegex)
@@ -57,6 +61,7 @@ func (h *Handler) MetricsRouter() *gin.Engine {
 	value := router.Group("/value")
 	{
 		value.GET("", h.statusNotImplemented)
+		value.POST("/", h.valueOf)
 		r := value.Group("/:regex", h.statusNotImplementedRegex)
 		{
 			r.GET("", h.statusNotImplementedRegex)
