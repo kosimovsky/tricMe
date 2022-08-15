@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	tricme "github.com/kosimovsky/tricMe"
 	"io"
 	"net/http"
 	"regexp"
@@ -11,6 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+
+	tricme "github.com/kosimovsky/tricMe"
 )
 
 func (h *Handler) updateMetric(c *gin.Context) {
@@ -115,7 +116,7 @@ func (h *Handler) singleCounter(c *gin.Context) {
 }
 
 func (h *Handler) startPage(c *gin.Context) {
-	currentMetrics := h.keeper.Current()
+	currentMetrics := h.keeper.CurrentValues()
 	c.HTML(http.StatusOK, "start_page.html", gin.H{
 		"content": `Welcome!
 There are some metrics for you.`,

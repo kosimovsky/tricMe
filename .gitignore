@@ -13,6 +13,7 @@
 
 # Logfiles
 *.log
+*.json
 
 # Binaries
 cmd/agent/main
