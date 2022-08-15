@@ -1,11 +1,13 @@
 package storage
 
 import (
+	"context"
 	"encoding/json"
 	"os"
+	"sync"
+	"time"
 
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
+	"github.com/kosimovsky/tricMe/internal/log"
 )
 
 type Storer interface {
@@ -18,17 +20,19 @@ type Restorer interface {
 	Close() error
 }
 
-type storer struct {
+type store struct {
 	file    *os.File
 	encoder *json.Encoder
+
+	mu sync.RWMutex
 }
 
-func newStorer(filename string) (*storer, error) {
+func newStore(filename string) (*store, error) {
 	file, err := os.OpenFile(filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return nil, err
 	}
-	return &storer{
+	return &store{
 		file:    file,
 		encoder: json.NewEncoder(file),
 	}, nil
@@ -50,26 +54,14 @@ func newRestorer(filename string) (*restorer, error) {
 	}, nil
 }
 
-func (p *storer) WriteMetric(metrics *metrics) error {
+func (p *store) WriteMetric(metrics *metrics) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
 	return p.encoder.Encode(&metrics)
 }
 
-func (p *storer) Close() error {
+func (p *store) Close() error {
 	return p.file.Close()
-}
-
-type config struct {
-	storeInterval int
-	filename      string
-	restore       bool
-}
-
-func readConfig() *config {
-	return &config{
-		storeInterval: viper.GetInt("Interval"),
-		filename:      viper.GetString("File"),
-		restore:       viper.GetBool("Restore"),
-	}
 }
 
 func (r *restorer) ReadMetric() (*metrics, error) {
@@ -84,27 +76,51 @@ func (r *restorer) Close() error {
 	return r.file.Close()
 }
 
-func (m *metrics) Keep() error {
-	c := readConfig()
-	s, err := newStorer(c.filename)
+func (m *metrics) Keep(filename string, interval time.Duration, logger *log.Logger) {
+	ctx := context.Background()
+	ticker := time.NewTicker(interval)
+	select {
+	case <-ticker.C:
+		{
+			s, err := newStore(filename)
+			if err != nil {
+				logger.Errorf(err.Error())
+				return
+			}
+			defer s.Close()
+			err = s.WriteMetric(m)
+			if err != nil {
+				logger.Errorf(err.Error())
+				return
+			}
+		}
+	case <-ctx.Done():
+		ticker.Stop()
+	}
+}
+
+func (m *metrics) keepDirectly(filename string) error {
+	m.mx.Lock()
+	defer m.mx.Unlock()
+	s, err := newStore(filename)
 	if err != nil {
 		return err
 	}
 	defer s.Close()
 	err = s.WriteMetric(m)
 	if err != nil {
-		logrus.Error(err.Error())
+		return err
 	}
 	return nil
 }
 
-func (m *metrics) Restore() error {
-	c := readConfig()
-	if c.restore {
-		r, err := newRestorer(c.filename)
+func (m *metrics) Restore(filename string, flag bool) error {
+	if flag {
+		r, err := newRestorer(filename)
 		if err != nil {
 			return err
 		}
+		defer r.Close()
 		metric, err := r.ReadMetric()
 		if err != nil {
 			return err

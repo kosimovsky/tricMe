@@ -2,8 +2,8 @@ package server
 
 import (
 	"context"
+	"log"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -11,24 +11,23 @@ type Server struct {
 	httpServer *http.Server
 }
 
-func NewServer() *Server {
-	return &Server{}
-}
-
-func (s *Server) Run(address string, handler http.Handler) error {
-	s.httpServer = &http.Server{
-		Addr:           validate(address),
+func NewServer(address string, handler http.Handler) *Server {
+	return &Server{httpServer: &http.Server{
+		Addr:           address,
 		Handler:        handler,
 		MaxHeaderBytes: 1 << 20,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
+	},
 	}
-	return s.httpServer.ListenAndServe()
+}
+
+func (s *Server) Run() {
+	if err := s.httpServer.ListenAndServe(); err != nil {
+		log.Fatalf("error occured while running server: %s", err.Error())
+	}
 }
 
 func (s *Server) Shutdown(ctx context.Context) error {
 	return s.httpServer.Shutdown(ctx)
-}
-func validate(address string) string {
-	return strings.TrimLeft(address, `htps:/`)
 }

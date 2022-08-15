@@ -1,14 +1,57 @@
 package config
 
 import (
-	"fmt"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 	"os"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
+
+type serverConfig struct {
+	Address       string
+	Debug         bool
+	GinMode       string
+	Logfile       string
+	Loglevel      int
+	Storage       string
+	StoreInterval time.Duration
+	Filename      string
+	Restore       bool
+}
+
+type AgentConfig struct {
+	Address     string
+	Logfile     string
+	MetricsType string
+	Poll        time.Duration
+	Report      time.Duration
+}
+
+func NewAgentConfig() *AgentConfig {
+	return &AgentConfig{
+		Address:     viper.GetString("Address"),
+		Logfile:     viper.GetString("Logfile"),
+		MetricsType: viper.GetString("MetricsType"),
+		Poll:        viper.GetDuration("Poll"),
+		Report:      viper.GetDuration("Report"),
+	}
+}
+
+func NewServerConfig() *serverConfig {
+	return &serverConfig{
+		Address:       viper.GetString("Address"),
+		Debug:         viper.GetBool("Debug"),
+		GinMode:       viper.GetString("ginMode"),
+		Logfile:       viper.GetString("Logfile"),
+		Loglevel:      viper.GetInt("Loglevel"),
+		Storage:       viper.GetString("Storage"),
+		StoreInterval: viper.GetDuration("Interval"),
+		Filename:      viper.GetString("File"),
+		Restore:       viper.GetBool("Restore"),
+	}
+}
 
 // InitServerConfig reads configuration file and ENV for server
 func InitServerConfig() error {
@@ -38,12 +81,10 @@ func InitServerConfig() error {
 	file := fSet.StringP("file", "f", "/tmp/devops-metrics-db.json", "file to store metrics")
 	err := viper.BindPFlags(fSet)
 	if err != nil {
-		logrus.Error(err.Error())
 		return err
 	}
 
 	if err = fSet.Parse(os.Args[1:]); err != nil {
-		logrus.Error(err.Error())
 		return err
 	}
 
@@ -60,11 +101,8 @@ func InitServerConfig() error {
 		viper.Set("File", file)
 	}
 
-	if err := viper.ReadInConfig(); err != nil {
-		_, err = fmt.Fprintln(os.Stderr, "Use config file:", viper.ConfigFileUsed())
-		if err != nil {
-			return err
-		}
+	if err = viper.ReadInConfig(); err != nil {
+		return err
 	}
 
 	setGinMode(viper.GetString("GinMode"))
@@ -111,12 +149,10 @@ func InitAgentConfig() error {
 
 	err := viper.BindPFlags(fSet)
 	if err != nil {
-		logrus.Error(err.Error())
 		return err
 	}
 
 	if err = fSet.Parse(os.Args[1:]); err != nil {
-		logrus.Error(err.Error())
 		return err
 	}
 
@@ -131,10 +167,7 @@ func InitAgentConfig() error {
 	}
 
 	if err = viper.ReadInConfig(); err != nil {
-		_, err = fmt.Fprintln(os.Stderr, "Use config file:", viper.ConfigFileUsed())
-		if err != nil {
-			return err
-		}
+		return err
 	}
 	return nil
 }

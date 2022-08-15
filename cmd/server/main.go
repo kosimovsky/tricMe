@@ -3,97 +3,59 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 
 	"github.com/kosimovsky/tricMe/config"
 	"github.com/kosimovsky/tricMe/internal/handlers"
+	"github.com/kosimovsky/tricMe/internal/log"
 	"github.com/kosimovsky/tricMe/internal/server"
 	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
 func main() {
 	if err := config.InitServerConfig(); err != nil {
-		_ = fmt.Errorf("error while reading config file %v", err.Error())
+		panic(fmt.Sprintf("error while reading config file %s", err.Error()))
 	}
-	logfileFromConfig := viper.GetString("logfile")
-	logfile, err := os.OpenFile(logfileFromConfig, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
-	if err != nil {
-		log.Printf("error occured opening file : %v, %s", err, logfileFromConfig)
-	}
-	defer logfile.Close()
-	logrus.New()
-	logrus.SetOutput(logfile)
-	logrus.SetFormatter(new(logrus.JSONFormatter))
+	c := config.NewServerConfig()
 
-	store, _ := storage.NewStorage(&storage.Storage{StorageType: viper.GetString("storage")})
+	logger, err := log.NewLogger(c.Logfile)
+	if err != nil {
+		fmt.Printf("error occurs while logger initialization: %s", err.Error())
+		os.Exit(1)
+	}
+	defer logger.Close()
+	store, err := storage.NewStorage(c.Storage)
+	if err != nil {
+		logger.Error(err)
+	}
 	handler := handlers.NewHandler(store)
-	err = store.Restore()
+	err = store.Restore(c.Filename, c.Restore)
 	if err != nil {
-		logrus.Error(err.Error())
+		logger.Error(err.Error())
 	}
-	srv := server.NewServer()
+	srv := server.NewServer(c.Address, handler.MetricsRouter())
 
-	if viper.GetBool("debug") {
-		logrus.SetLevel(logrus.WarnLevel)
-		logrus.Printf("Server started in debug mode with loglevel: %v", logrus.GetLevel().String())
-		ctx := context.Background()
-		go func() {
-			ticker := time.NewTicker(5 * time.Second)
-			for {
-				select {
-				case <-ticker.C:
-					err := store.Output()
-					if err != nil {
-						logrus.Printf("error output: %s", err.Error())
-					}
-				case <-ctx.Done():
-					ticker.Stop()
-				}
-			}
-		}()
+	if c.Debug {
+		logger.SetWarnLevel()
+		logger.Printf("Server started in debug mode with loglevel: %v", logger.GetLevel().String())
+		go store.Output(logger)
 	} else {
-		logrus.Printf("Server started on %s in silent mode with loglevel: %v", viper.GetString("address"), logrus.GetLevel().String())
+		logger.Printf("Server started on %s in silent mode with loglevel: %v", c.Address, logger.GetLevel().String())
 	}
 
-	storeFile := viper.GetString("file")
-	storeInterval := viper.GetDuration("interval")
-
-	if storeFile != "" && storeInterval > 0 {
-		ctx := context.Background()
-		go func() {
-			ticker := time.NewTicker(storeInterval)
-			for {
-				select {
-				case <-ticker.C:
-					err := store.Keep()
-					if err != nil {
-						logrus.Printf("error storing metrics to file: %s", err.Error())
-					}
-				case <-ctx.Done():
-					ticker.Stop()
-				}
-			}
-		}()
+	if c.Filename != "" && c.StoreInterval > 0 {
+		go store.Keep(c.Filename, c.StoreInterval, logger)
 	}
 
-	go func() {
-		if err := srv.Run(viper.GetString("address"), handler.MetricsRouter()); err != nil {
-			log.Fatalf("error occured while running server: %s", err.Error())
-		}
-	}()
+	go srv.Run()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 	sig := <-quit
-	log.Printf("Recieved a signal %v. Server is shutting down...", sig)
-	if err := srv.Shutdown(context.Background()); err != nil {
-		log.Printf("error occured while server shutting down : %s", err.Error())
+	logger.Printf("Recieved a signal %v. Server is shutting down...", sig)
+	if err = srv.Shutdown(context.Background()); err != nil {
+		logger.Printf("error occured while server shutting down : %s", err.Error())
 	}
 }

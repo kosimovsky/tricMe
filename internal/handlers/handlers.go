@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
+
 	"github.com/kosimovsky/tricMe/internal/storage"
 )
 
@@ -15,6 +17,7 @@ func NewHandler(keeper storage.Storekeeper) *Handler {
 
 func (h *Handler) MetricsRouter() *gin.Engine {
 	router := gin.New()
+	router.Use(gzip.Gzip(gzip.DefaultCompression))
 
 	htmlStart := router.Group("/")
 	{
