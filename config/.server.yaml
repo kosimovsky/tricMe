@@ -1,0 +1,9 @@
+address: "127.0.0.1:8080"
+debug: false
+file: "/tmp/devops-metrics-db.json"
+ginMode: release
+interval: 15s
+logfile: server.log
+loglevel: 3
+restore: false
+storage: memory

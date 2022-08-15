@@ -2,11 +2,16 @@ server:
   address: "127.0.0.1:8080"
   logfile: "server.log"
   loglevel: 3
-  storage: "local"
   ginMode: "release"
   debug: False
+  storage: "memory"    # [memory, file, etc...]
+  store:
+    storeInterval: 300
+    storeFile: "/tmp/devops-metrics-db.json"
+    restore: True
 
 agent:
+  address: "127.0.0.1:8080"
   logfile: "agent.log"
   pollInterval: "2s"
   reportInterval: "10s"
