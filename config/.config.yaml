@@ -11,6 +11,7 @@ server:
     restore: True
 
 agent:
+  address: "127.0.0.1:8080"
   logfile: "agent.log"
   pollInterval: "2s"
   reportInterval: "10s"

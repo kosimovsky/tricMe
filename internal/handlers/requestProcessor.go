@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	tricme "github.com/kosimovsky/tricMe"
 	"io"
 	"net/http"
 	"regexp"
@@ -11,6 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+
+	tricme "github.com/kosimovsky/tricMe"
 )
 
 func (h *Handler) updateMetric(c *gin.Context) {
