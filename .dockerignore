@@ -1,0 +1,6 @@
+.github/
+.gitignore
+.git
+README.md
+cmd/agent
+internal/agent
